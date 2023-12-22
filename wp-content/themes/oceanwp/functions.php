@@ -18,7 +18,7 @@
  * @package OceanWP WordPress theme
  */
 
-// Exit if accessed directly
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -275,12 +275,10 @@ final class OCEANWP_Theme_Class {
 			}
 
 			// Front-end classes.
-		} else {
-
-			// Breadcrumbs class.
-			require_once OCEANWP_INC_DIR . 'breadcrumbs.php';
-
 		}
+
+		// Breadcrumbs class.
+		require_once OCEANWP_INC_DIR . 'breadcrumbs.php';
 
 		// Customizer class.
 		require_once OCEANWP_INC_DIR . 'customizer/library/customizer-custom-controls/functions.php';
@@ -448,7 +446,7 @@ final class OCEANWP_Theme_Class {
 
 		// Enqueue font awesome style.
 		if ( get_theme_mod( 'ocean_performance_fontawesome', 'enabled' ) === 'enabled' ) {
-			wp_enqueue_style( 'font-awesome', OCEANWP_THEME_URI . '/assets/fonts/fontawesome/css/all.min.css', false, '5.15.1' );
+			wp_enqueue_style( 'font-awesome', OCEANWP_THEME_URI . '/assets/fonts/fontawesome/css/all.min.css', false, '6.4.2' );
 		}
 
 		// Enqueue simple line icons style.
@@ -624,7 +622,9 @@ final class OCEANWP_Theme_Class {
 		wp_enqueue_script( 'oceanwp-slider', $dir . 'ow-slider.min.js', $main_script_dependencies, $theme_version, true );
 
 		// Scroll Effect script.
-		wp_enqueue_script( 'oceanwp-scroll-effect', $dir . 'scroll-effect.min.js', $main_script_dependencies, $theme_version, true );
+		if ( get_theme_mod( 'ocean_performance_scroll_effect', 'enabled' ) === 'enabled' ) {
+			wp_enqueue_script( 'oceanwp-scroll-effect', $dir . 'scroll-effect.min.js', $main_script_dependencies, $theme_version, true );
+		}
 
 		// Scroll to Top script.
 		if ( oceanwp_display_scroll_up_button() ) {
@@ -660,12 +660,14 @@ final class OCEANWP_Theme_Class {
 	public static function localize_array() {
 
 		// Create array.
-		$sidr_side   = get_theme_mod( 'ocean_mobile_menu_sidr_direction', 'left' );
-		$sidr_side   = $sidr_side ? $sidr_side : 'left';
-		$sidr_target = get_theme_mod( 'ocean_mobile_menu_sidr_dropdown_target', 'link' );
-		$sidr_target = $sidr_target ? $sidr_target : 'link';
-		$vh_target   = get_theme_mod( 'ocean_vertical_header_dropdown_target', 'link' );
-		$vh_target   = $vh_target ? $vh_target : 'link';
+		$sidr_side     = get_theme_mod( 'ocean_mobile_menu_sidr_direction', 'left' );
+		$sidr_side     = $sidr_side ? $sidr_side : 'left';
+		$sidr_target   = get_theme_mod( 'ocean_mobile_menu_sidr_dropdown_target', 'link' );
+		$sidr_target   = $sidr_target ? $sidr_target : 'link';
+		$vh_target     = get_theme_mod( 'ocean_vertical_header_dropdown_target', 'link' );
+		$vh_target     = $vh_target ? $vh_target : 'link';
+		$scroll_offset = get_theme_mod( 'ocean_scroll_effect_offset_value' );
+		$scroll_offset = $scroll_offset ? $scroll_offset : 0;
 		$array       = array(
 			'nonce'                 => wp_create_nonce( 'oceanwp' ),
 			'isRTL'                 => is_rtl(),
@@ -676,6 +678,7 @@ final class OCEANWP_Theme_Class {
 			'sidrSide'              => $sidr_side,
 			'sidrDropdownTarget'    => $sidr_target,
 			'verticalHeaderTarget'  => $vh_target,
+			'customScrollOffset'    => $scroll_offset,
 			'customSelects'         => '.woocommerce-ordering .orderby, #dropdown_product_cat, .widget_categories select, .widget_archive select, .single-product .variations_form .variations select',
 		);
 
@@ -1042,10 +1045,9 @@ final class OCEANWP_Theme_Class {
 
 		// Add has media class.
 		if ( has_post_thumbnail()
-			|| get_post_meta( $post->ID, 'ocean_post_oembed', true )
 			|| get_post_meta( $post->ID, 'ocean_post_self_hosted_media', true )
-			|| get_post_meta( $post->ID, 'ocean_post_video_embed', true )
-		) {
+			|| get_post_meta( $post->ID, 'ocean_post_oembed', true )
+			|| get_post_meta( $post->ID, 'ocean_post_video_embed', true ) ) {
 			$classes[] = 'has-media';
 		}
 
@@ -1125,7 +1127,7 @@ if ( ! function_exists( 'owp_fs' ) ) {
 						'has_addons'                     => true,
 						'has_paid_plans'                 => true,
 						'menu'                           => array(
-'slug'    => 'oceanwp',
+							'slug'    => 'oceanwp',
 							'account' => true,
 							'contact' => false,
 							'support' => false,

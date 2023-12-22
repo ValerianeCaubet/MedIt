@@ -3,11 +3,11 @@
  * Plugin Name:         Ocean Extra
  * Plugin URI:          https://oceanwp.org/extension/ocean-extra/
  * Description:         Add extra features and flexibility to your OceanWP theme for a turbocharged premium experience and full control over every aspect of your website.
- * Version:             2.0.6
+ * Version:             2.2.4
  * Author:              OceanWP
  * Author URI:          https://oceanwp.org/
  * Requires at least:   5.6
- * Tested up to:        6.1
+ * Tested up to:        6.4.2
  * Text Domain: ocean-extra
  * Domain Path: /languages
  *
@@ -16,7 +16,7 @@
  * @author OceanWP
  */
 
-// Exit if accessed directly
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -69,6 +69,32 @@ final class Ocean_Extra {
 	 */
 	public $version;
 
+	/**
+	 * The plugin url.
+	 *
+	 * @var     string
+	 * @access  public
+	 * @since   2.1.7
+	 */
+	public $plugin_url;
+
+	/**
+	 * The plugin path.
+	 *
+	 * @var     string
+	 * @access  public
+	 * @since   2.1.7
+	 */
+	public $plugin_path;
+
+	/**
+	 * The plugin data.
+	 *
+	 * @var     array
+	 * @access  public
+	 */
+	public $plugin_data;
+
 	// Admin - Start
 	/**
 	 * The admin object.
@@ -90,7 +116,8 @@ final class Ocean_Extra {
 		$this->token       = 'ocean-extra';
 		$this->plugin_url  = plugin_dir_url( __FILE__ );
 		$this->plugin_path = plugin_dir_path( __FILE__ );
-		$this->version     = '2.0.6';
+		$this->plugin_data = get_file_data( __FILE__, array( 'Version' => 'Version' ), false );
+		$this->version     = $this->plugin_data['Version'];
 
 		define( 'OE_URL', $this->plugin_url );
 		define( 'OE_PATH', $this->plugin_path );
@@ -111,6 +138,8 @@ final class Ocean_Extra {
 		// Setup all the things
 		add_action( 'init', array( $this, 'setup' ) );
 
+		add_filter('register_post_type_args', array( $this, 'oe_custom_field_support_metabox' ), 10, 2 );
+
 		// Menu icons
 		$theme = wp_get_theme();
 		if ( 'OceanWP' == $theme->name || 'oceanwp' == $theme->template ) {
@@ -118,8 +147,8 @@ final class Ocean_Extra {
 			if ( get_template_directory() == get_stylesheet_directory() ) {
 				$current_theme_version  = theme_version();
 			} else {
-				$parent = wp_get_theme()->parent(); 
-				// get parent version 
+				$parent = wp_get_theme()->parent();
+				// get parent version.
 				if ( ! empty( $parent) ) {
 					$current_theme_version = $parent->Version;
 				}
@@ -128,7 +157,7 @@ final class Ocean_Extra {
 
 
 			require_once OE_PATH . '/includes/panel/theme-panel.php';
-			require_once OE_PATH . '/includes/panel/integrations-tab.php';
+
 			$oe_library_active_status = get_option( 'oe_library_active_status', 'yes' );
 			if( $oe_library_active_status == 'yes' ) {
 				require_once OE_PATH . '/includes/panel/library.php';
@@ -144,6 +173,7 @@ final class Ocean_Extra {
 				require_once OE_PATH . '/includes/compatibility/ocean.php';
 			}
 
+			require_once OE_PATH . '/includes/preloader/preloader.php';
 
 			// Outputs custom JS to the footer
 			add_action( 'wp_footer', array( $this, 'custom_js' ), 9999 );
@@ -277,6 +307,22 @@ final class Ocean_Extra {
 	}
 
 	/**
+	 * LearnDash compatibility with OceanWP Metabox.
+	 */
+	public function oe_custom_field_support_metabox( $args, $post_type ) {
+
+		if ( 'sfwd-quiz' === $post_type
+			|| 'sfwd-courses' === $post_type
+			|| 'sfwd-lessons' === $post_type
+			|| 'sfwd-topic' === $post_type
+			|| 'ld-exam' === $post_type ) {
+			$args['supports'][] = 'custom-fields';
+		}
+
+		return $args;
+	}
+
+	/**
 	 * All theme functions hook into the oceanwp_footer_js filter for this function.
 	 *
 	 * @since 1.3.8
@@ -292,7 +338,7 @@ final class Ocean_Extra {
 			<script type="text/javascript">
 
 				/* OceanWP JS */
-				<?php echo Ocean_Extra_JSMin::minify( $output ); ?>
+				<?php echo \OceanWP\Minifier::minify( $output ); ?>
 
 			</script>
 
@@ -366,11 +412,12 @@ final class Ocean_Extra {
 		if ( 'OceanWP' == $theme->name || 'oceanwp' == $theme->template ) {
 			require_once OE_PATH . '/includes/metabox/butterbean/butterbean.php';
 			require_once OE_PATH . '/includes/metabox/metabox.php';
-			require_once OE_PATH . '/includes/metabox/shortcodes.php';
-			require_once OE_PATH . '/includes/metabox/gallery-metabox/gallery-metabox.php';
+			require_once OE_PATH . '/includes/post-settings/post-settings.php';
+			require_once OE_PATH . '/includes/post-settings/apply-settings.php';
+			require_once OE_PATH . '/includes/post-settings/apply-shortcode.php';
 			require_once OE_PATH . '/includes/shortcodes/shortcodes.php';
 			require_once OE_PATH . '/includes/image-resizer.php';
-			require_once OE_PATH . '/includes/jsmin.php';
+			require_once OE_PATH . '/includes/jshrink.php';
 			require_once OE_PATH . '/includes/panel/notice.php';
 			require_once OE_PATH . '/includes/walker.php';
 			require_once OE_PATH . '/includes/ocean-extra-strings.php';
@@ -381,6 +428,8 @@ final class Ocean_Extra {
 				require_once OE_PATH . '/includes/admin-bar/admin-bar.php';
 				require_once OE_PATH . '/includes/admin-bar/notifications.php';
 			}
+			require_once OE_PATH . '/includes/adobe-font.php';
+			require_once OE_PATH . '/includes/preloader/customizer.php';
 
 			add_action( 'wp_enqueue_scripts', array( $this, 'scripts' ), 999 );
 		}
@@ -533,7 +582,7 @@ final class Ocean_Extra {
 			$output .= self::opengraph_tag( 'property', 'og:image:height', absint( $get_image[2] ) );
 		}
 
-		$output .= self::opengraph_tag( 'property', 'og:url', trim( get_permalink() ) );
+		$output .= self::opengraph_tag( 'property', 'og:url', trim( ocean_get_opengraph_url() ) );
 		$output .= self::opengraph_tag( 'property', 'og:site_name', trim( get_bloginfo( 'name' ) ) );
 
 		if ( is_singular() && ! is_front_page() ) {
@@ -611,6 +660,11 @@ final class Ocean_Extra {
 	public function scripts() {
 
 		// Load main stylesheet
+
+		if ( get_theme_mod( 'ocean_load_widgets_stylesheet', 'enabled' ) === 'disabled' ) {
+			return;
+		}
+
 		wp_enqueue_style( 'oe-widgets-style', plugins_url( '/assets/css/widgets.css', __FILE__ ) );
 
 		// If rtl
@@ -621,6 +675,53 @@ final class Ocean_Extra {
 	}
 
 } // End Class.
+
+/**
+ * Get correct url for opengraph url tag.
+ *
+ * @since 3.4.3
+ */
+if ( ! function_exists( 'ocean_get_opengraph_url' ) ) {
+	function ocean_get_opengraph_url() {
+		$url = '';
+		if ( empty( $url ) ) {
+			if ( is_singular() ) {
+				$url = get_permalink();
+			} else if ( is_author() ) {
+				$url = get_author_posts_url( get_query_var( 'author' ), get_query_var( 'author_name' ) );
+			} else if ( is_tax() || is_tag() || is_category() ) {
+				$term = get_queried_object();
+				$url = get_term_link( $term, $term->taxonomy );
+			} else if ( is_search() ) {
+				$url = get_search_link();
+			} else if ( is_front_page() ) {
+				$url = home_url();
+			} else if ( is_home() && 'page' === get_option( 'show_on_front' ) ) {
+				$url = get_permalink( get_option( 'page_for_posts' ) );
+			} else if ( is_post_type_archive() ) {
+				$post_type = get_query_var( 'post_type' );
+				if ( is_array( $post_type ) ) {
+					$post_type = reset( $post_type );
+				}
+				$url = get_post_type_archive_link( $post_type );
+			} else if ( is_archive() ) {
+				if ( is_date() ) {
+					if ( is_day() ) {
+						$url = get_day_link( get_query_var( 'year' ), get_query_var( 'monthnum' ), get_query_var( 'day' ) );
+					} elseif ( is_month() ) {
+						$url = get_month_link( get_query_var( 'year' ), get_query_var( 'monthnum' ) );
+					} elseif ( is_year() ) {
+						$url = get_year_link( get_query_var( 'year' ) );
+					}
+				}
+			}
+		}
+
+		$url = apply_filters( 'ocean_seo_opengraph_tag_url', $url );
+
+		return esc_url( $url );
+	}
+}
 
 /**
  * Check link rel and return correct aria label
@@ -673,7 +774,7 @@ function theme_version() {
  * Display Notice when Ocean Extra is outdated.
  *
  *  @since 2.0.0
- * 
+ *
  * @return void
  */
 
@@ -749,10 +850,40 @@ function owp_fs_is_submenu_visible( $is_visible, $submenu_id ) {
 					$licenses = $addon_fs->_get_license();
 
 					if ( is_object( $licenses ) &&
-						 FS_Plugin_License::is_valid_id( $licenses->parent_license_id )
+						FS_Plugin_License::is_valid_id( $licenses->parent_license_id )
 					) {
 						$show_pricing = false;
 						break;
+					}
+				}
+			}
+
+			if( property_exists( 'OceanWP_EDD_License_Key', 'separate_addons' ) && !empty( OceanWP_EDD_License_Key::$separate_addons ) ) {
+				foreach ( OceanWP_EDD_License_Key::$separate_addons as $class_name => $data ) {
+					if ( ! class_exists( $class_name ) ) {
+						continue;
+					}
+
+					if ( ! function_exists( $data['fs_shortcode'] ) ) {
+						continue;
+					}
+
+					/**
+					 * Initiate the Freemius instance before migrating.
+					 *
+					 * @var Freemius $addon_fs
+					 */
+					$addon_fs = call_user_func( $data['fs_shortcode'] );
+
+					if ( $addon_fs->has_active_valid_license() ) {
+						$licenses = $addon_fs->_get_license();
+
+						if ( is_object( $licenses ) &&
+							FS_Plugin_License::is_valid_id( $licenses->id )
+						) {
+							$show_pricing = false;
+							break;
+						}
 					}
 				}
 			}

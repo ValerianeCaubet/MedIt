@@ -57,6 +57,7 @@ class HMWP_Models_Brute
         }
 
         $this->user_ip = $this->clean_ip($_SERVER['REMOTE_ADDR']);
+
         return $this->user_ip;
     }
 
@@ -132,10 +133,7 @@ class HMWP_Models_Brute
     {
 
         $ip = $this->brute_get_ip();
-        $headers = $this->brute_get_headers();
-        $header_hash = md5(json_encode($headers));
-
-        $transient_name = 'hmwp_brute_' . $header_hash;
+	    $transient_name = 'hmwp_brute_' . md5($ip);
         $transient_value = $this->get_transient($transient_name);
 
         //Never block login from whitelisted IPs
@@ -153,7 +151,6 @@ class HMWP_Models_Brute
             //there is a current block-- prevent login
             $this->brute_kill_login();
         }
-
 
         //If we've reached this point, this means that the IP isn't cached.
         //Now we check to see if we should allow login
@@ -263,8 +260,6 @@ class HMWP_Models_Brute
             'HTTP_TRUE_CLIENT_IP',
             'HTTP_X_CLIENTIP',
             'HTTP_X_CLUSTER_CLIENT_IP',
-            'HTTP_X_FORWARDED',
-            'HTTP_X_FORWARDED_FOR',
             'HTTP_X_IP_TRAIL',
             'HTTP_X_REAL_IP',
             'HTTP_X_VARNISH',
@@ -291,15 +286,16 @@ class HMWP_Models_Brute
      */
     public function brute_call($action = 'check_ip', $info = array())
     {
-        $headers = $this->brute_get_headers();
-        $header_hash = md5(json_encode($headers));
-        $transient_name = 'hmwp_brute_' . $header_hash;
+	    $ip = $this->brute_get_ip();
+	    $transient_name = 'hmwp_brute_' . md5($ip);
+	    if(!$response = $this->get_transient($transient_name)){
+		    $response = array();
+	    }
 
-        $response = $this->get_transient($transient_name);
         $attempts = (isset($response['attempts']) ? (int)$response['attempts'] : 0);
 
         if ($action == 'failed_attempt') {
-            if ($this->check_whitelisted_ip($this->brute_get_ip())) {
+            if ($this->check_whitelisted_ip($ip)) {
                 $response['status'] = 'ok';
                 return $response;
             }
@@ -308,7 +304,7 @@ class HMWP_Models_Brute
 
             if ($attempts >= HMWP_Classes_Tools::getOption('brute_max_attempts')) {
 
-                $info['ip'] = $this->brute_get_ip();
+                $info['ip'] = $ip;
                 $info['host'] = $this->brute_get_local_host();
                 $info['protocol'] = $this->brute_get_protocol();
                 $info['headers'] = json_encode($this->brute_get_headers());
@@ -317,22 +313,27 @@ class HMWP_Models_Brute
                 $response['attempts'] = $attempts;
                 $response['status'] = 'blocked';
 
-                //Log the block IP on the server
-                HMWP_Classes_ObjController::getClass('HMWP_Models_Log')->hmwp_log_actions('block_ip', array('ip' => $this->brute_get_ip()));
+                $this->set_transient($transient_name, $response, (int)HMWP_Classes_Tools::getOption('brute_max_timeout'));
 
-                wp_redirect(site_url());
+                //Log the block IP on the server
+                HMWP_Classes_ObjController::getClass('HMWP_Models_Log')->hmwp_log_actions('block_ip', array('ip' => $ip));
+
+                wp_redirect(home_url());
+                exit();
             } else {
                 $response['attempts'] = $attempts;
                 $response['status'] = 'ok';
+
+                $this->set_transient($transient_name, $response, (int)HMWP_Classes_Tools::getOption('brute_max_timeout'));
             }
-            $this->set_transient($transient_name, $response, (int)HMWP_Classes_Tools::getOption('brute_max_timeout'));
+
+
         } elseif ($action == 'check_ip') {
             $response['status'] = (isset($response['status']) ? $response['status'] : 'ok');
 
             //Always block a banned IP
-            if ($this->check_banned_ip($this->brute_get_ip())) {
+            if ($this->check_banned_ip($ip)) {
                 $response['status'] = 'blocked';
-
             }
 
         } elseif ($action == 'clear_ip') {
@@ -420,9 +421,10 @@ class HMWP_Models_Brute
         global $wpdb;
         $ips = array();
         $pattern = '_transient_timeout_hmwp_brute_';
+
         //check 20 keyword at one time
         $sql = $wpdb->prepare("SELECT `option_name` FROM `{$wpdb->options}` WHERE (`option_name` LIKE %s) ORDER BY `option_id` DESC", $pattern . '%');
-        //echo $sql; exit();
+
         if ($rows = $wpdb->get_results($sql)) {
             foreach ($rows as $row) {
                 if (!$transient_value = $this->get_transient(str_replace($pattern, 'hmwp_brute_', $row->option_name))) {
@@ -449,10 +451,13 @@ class HMWP_Models_Brute
         $banlist = HMWP_Classes_Tools::getOption('banlist_ip');
 
         if($banlist <> '' && is_string($banlist)) {
-            $wl_items = @json_decode($banlist, true);
+            $bl_items = @json_decode($banlist, true);
 
-            if (!empty($wl_items)) {
-                foreach ($wl_items as $item) {
+	        //add the hook for users to add IPs in the blacklist
+	        $bl_items = apply_filters('hmwp_blacklisted_ips', $bl_items);
+
+	        if (!empty($bl_items)) {
+                foreach ($bl_items as $item) {
                     $item = trim($item);
                     if ($ip == $item) {
                         return true;
@@ -497,21 +502,16 @@ class HMWP_Models_Brute
      */
     public function brute_math_authenticate($user, $response)
     {
+        $salt = HMWP_Classes_Tools::getOption('hmwp_disable') . get_site_option('admin_email');
+        $ans = (int)HMWP_Classes_Tools::getValue('brute_num', 0);
+        $salted_ans = sha1($salt . $ans);
+        $correct_ans = HMWP_Classes_Tools::getValue('brute_ck');
 
-        if (HMWP_Classes_Tools::getValue('brute_ck')) {
-
-            $salt = HMWP_Classes_Tools::getOption('hmwp_disable') . get_site_option('admin_email');
-            $ans = (int)HMWP_Classes_Tools::getValue('brute_num', 0);
-            $salted_ans = sha1($salt . $ans);
-            $correct_ans = HMWP_Classes_Tools::getValue('brute_ck');
-
-            if ($correct_ans !== false && $salted_ans != $correct_ans) {
-                $user = new WP_Error(
-                    'authentication_failed',
-                    sprintf(esc_html__('%sYou failed to correctly answer the math problem.%s Please try again', 'hide-my-wp'), '<strong>', '</strong>')
-                );
-            }
-
+        if ($correct_ans === false || $salted_ans != $correct_ans) {
+            $user = new WP_Error(
+                'authentication_failed',
+                sprintf(esc_html__('%sYou failed to correctly answer the math problem.%s Please try again', 'hide-my-wp'), '<strong>', '</strong>')
+            );
         }
 
         return $user;
@@ -579,6 +579,7 @@ class HMWP_Models_Brute
             'missing-input-secret' => esc_html__('The secret parameter is missing.', 'hide-my-wp'),
             'invalid-input-secret' => esc_html__('The secret parameter is invalid or malformed.', 'hide-my-wp'),
             'missing-input-response' => esc_html__('Empty ReCaptcha. Please complete reCaptcha.', 'hide-my-wp'),
+            'timeout-or-duplicate' => esc_html__('The response parameter is invalid or malformed.', 'hide-my-wp'),
             'invalid-input-response' => esc_html__('The response parameter is invalid or malformed.', 'hide-my-wp')
         );
 
@@ -592,7 +593,9 @@ class HMWP_Models_Brute
                 //If captcha errors, let the user login and fix the error
                 if (isset($response['error-codes']) && !empty($response['error-codes'])) {
                     foreach ($response['error-codes'] as $error_code) {
-                        $error_message = $error_codes[$error_code];
+                        if(isset($error_codes[$error_code])){
+	                        $error_message = $error_codes[$error_code];
+                        }
                     }
                 }
 
@@ -630,22 +633,6 @@ class HMWP_Models_Brute
     }
 
     /**
-     * Show the reCaptcha form on login/register
-     *
-     * @return void
-     */
-    public function woocommerce_brute_recaptcha_form()
-    {
-        if (HMWP_Classes_Tools::getOption('brute_captcha_site_key') <> '' && HMWP_Classes_Tools::getOption('brute_captcha_secret_key') <> '') {
-            ?>
-            <script src='https://www.google.com/recaptcha/api.js?hl=<?php echo(HMWP_Classes_Tools::getOption('brute_captcha_language') <> '' ? HMWP_Classes_Tools::getOption('brute_captcha_language') : get_locale()) ?>' async defer></script>
-            <div class="g-recaptcha" data-sitekey="<?php echo HMWP_Classes_Tools::getOption('brute_captcha_site_key') ?>" data-theme="<?php echo HMWP_Classes_Tools::getOption('brute_captcha_theme') ?>"></div>
-            <?php
-        }
-    }
-
-
-    /**
      * Call the reCaptcha V3 from Google
      */
     public function brute_catpcha_v3_call()
@@ -676,7 +663,9 @@ class HMWP_Models_Brute
                 //If captcha errors, let the user login and fix the error
                 if (isset($response['error-codes']) && !empty($response['error-codes'])) {
                     foreach ($response['error-codes'] as $error_code) {
-                        $error_message = $error_codes[$error_code];
+	                    if(isset($error_codes[$error_code])){
+		                    $error_message = $error_codes[$error_code];
+	                    }
                     }
                 }
 
@@ -738,54 +727,6 @@ class HMWP_Models_Brute
         }
     }
 
-    /**
-     * reCaptcha V3 support for Woocommerce
-     * @return void
-     */
-    public function woocommerce_brute_recaptcha_form_v3()
-    {
-        if(!HMWP_Classes_Tools::getOption('brute_use_captcha_v3')) {
-            return;
-        }
-
-        if (HMWP_Classes_Tools::getOption('brute_captcha_site_key_v3') <> '' && HMWP_Classes_Tools::getOption('brute_captcha_secret_key_v3') <> '') {
-            ?>
-            <script src='https://www.google.com/recaptcha/api.js?render=<?php echo HMWP_Classes_Tools::getOption('brute_captcha_site_key_v3') ?>' async defer></script>
-            <script>
-                function reCaptchaSubmit(e) {
-                    var form = this;
-                    e.preventDefault();
-
-                    grecaptcha.ready(function() {
-                        grecaptcha.execute('<?php echo HMWP_Classes_Tools::getOption('brute_captcha_site_key_v3') ?>', {action: 'submit'}).then(function(token) {
-                            //add google data
-                            var input = document.createElement("input");
-                            input.type = "hidden";
-                            input.name = "g-recaptcha-response" ;
-                            input.value = token ;
-                            form.appendChild(input);
-
-                            //complete form integration
-                            var submit = document.createElement("input");
-                            submit.type = "hidden";
-                            submit.name = "login" ;
-                            form.appendChild(submit);
-
-                            form.submit();
-                        });
-                    });
-                }
-
-                if(document.getElementsByTagName("form").length > 0) {
-                    var x = document.getElementsByTagName("form");
-                    for (var i = 0; i < x.length; i++) {
-                        x[i].addEventListener("submit", reCaptchaSubmit);
-                    }
-                }
-            </script>
-            <?php
-        }
-    }
 
     /************************************************************************************/
     /**
@@ -794,7 +735,6 @@ class HMWP_Models_Brute
      */
     public function brute_kill_login()
     {
-
         do_action('hmwp_kill_login', $this->brute_get_ip());
 
         wp_ob_end_flush_all();

@@ -276,7 +276,7 @@ class HMWP_Models_Rewrite
                         if (HMWP_Classes_Tools::isMultisiteWithPath() ) {
                             foreach ( $this->paths as $path ) {
                                 $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_plugin_url'] . '/' . $all_plugins['from'][$index];
-                                $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_plugin_url') . '/' . $plugin_path . '/';
+                                $this->_replace['to'][] = $path . HMWP_Classes_Tools::getOption('hmwp_plugin_url') . '/' . $plugin_path . '/';
                                 $this->_replace['rewrite'][] = false;
                             }
                         }
@@ -292,7 +292,7 @@ class HMWP_Models_Rewrite
                 if (HMWP_Classes_Tools::isMultisiteWithPath() ) {
                     foreach ( $this->paths as $path ) {
                         $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_plugin_url'] . '/';
-                        $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_plugin_url') . '/';
+                        $this->_replace['to'][] = $path .HMWP_Classes_Tools::getOption('hmwp_plugin_url') . '/';
                         $this->_replace['rewrite'][] = false;
                     }
                 }
@@ -311,11 +311,11 @@ class HMWP_Models_Rewrite
                         if (HMWP_Classes_Tools::isMultisiteWithPath() ) {
                             foreach ( $this->paths as $path ) {
                                 $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_wp-content_url'] . '/' . HMWP_Classes_Tools::$default['hmwp_themes_url'] . '/' . $all_themes['from'][$index];
-                                $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_themes_url') . '/' . $theme_path . '/';
+                                $this->_replace['to'][] = $path . HMWP_Classes_Tools::getOption('hmwp_themes_url') . '/' . $theme_path . '/';
                                 $this->_replace['rewrite'][] = false;
 
                                 $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_wp-content_url'] . '/' . HMWP_Classes_Tools::$default['hmwp_themes_url'] . '/' . $all_themes['from'][$index] . HMWP_Classes_Tools::$default['hmwp_themes_style'];
-                                $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_themes_url') . '/' . $theme_path . '/' . HMWP_Classes_Tools::getOption('hmwp_themes_style');
+                                $this->_replace['to'][] = $path . HMWP_Classes_Tools::getOption('hmwp_themes_url') . '/' . $theme_path . '/' . HMWP_Classes_Tools::getOption('hmwp_themes_style');
                                 $this->_replace['rewrite'][] = false;
                             }
                         }
@@ -344,7 +344,7 @@ class HMWP_Models_Rewrite
                 if (HMWP_Classes_Tools::isMultisiteWithPath() ) {
                     foreach ( $this->paths as $path ) {
                         $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_wp-content_url'] . '/' . HMWP_Classes_Tools::$default['hmwp_themes_url'] . '/';
-                        $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_themes_url') . '/';
+                        $this->_replace['to'][] = $path . HMWP_Classes_Tools::getOption('hmwp_themes_url') . '/';
                         $this->_replace['rewrite'][] = false;
                     }
                 }
@@ -361,7 +361,7 @@ class HMWP_Models_Rewrite
                     if (HMWP_Classes_Tools::isMultisiteWithPath() ) {
                         foreach ( $this->paths as $path ) {
                             $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_wp-content_url'] . '/' . HMWP_Classes_Tools::$default['hmwp_upload_url'] . '/';
-                            $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_upload_url') . '/';
+                            $this->_replace['to'][] = $path . HMWP_Classes_Tools::getOption('hmwp_upload_url') . '/';
                             $this->_replace['rewrite'][] = false;
                         }
                     }
@@ -378,7 +378,7 @@ class HMWP_Models_Rewrite
                 if (HMWP_Classes_Tools::isMultisiteWithPath() ) {
                     foreach ( $this->paths as $path ) {
                         $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_wp-content_url'] . '/';
-                        $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_wp-content_url') . '/';
+                        $this->_replace['to'][] = $path . HMWP_Classes_Tools::getOption('hmwp_wp-content_url') . '/';
                         $this->_replace['rewrite'][] = false;
                     }
                 }
@@ -393,7 +393,7 @@ class HMWP_Models_Rewrite
                 if (HMWP_Classes_Tools::isMultisiteWithPath() ) {
                     foreach ( $this->paths as $path ) {
                         $this->_replace['from'][] = $path . HMWP_Classes_Tools::$default['hmwp_wp-includes_url'] . '/';
-                        $this->_replace['to'][] = HMWP_Classes_Tools::getOption('hmwp_wp-includes_url') . '/';
+                        $this->_replace['to'][] = $path . HMWP_Classes_Tools::getOption('hmwp_wp-includes_url') . '/';
                         $this->_replace['rewrite'][] = false;
                     }
                 }
@@ -483,7 +483,10 @@ class HMWP_Models_Rewrite
         include_once ABSPATH . 'wp-admin/includes/misc.php';
         include_once ABSPATH . 'wp-admin/includes/file.php';
 
-        //Build the redirects
+		//get home pahe
+	    $home_root = HMWP_Classes_Tools::getHomeRootPath();
+
+	    //Build the redirects
         $this->buildRedirect();
 
         if (!empty($this->_replace) ) {
@@ -507,33 +510,47 @@ class HMWP_Models_Rewrite
 			            if (substr($hmwp_url_mapping['from'][$index], -1) == '/' ) {
 				            $this->_umrewrites[] = array(
 					            'from' => '([_0-9a-zA-Z-]+/)?' . str_replace(home_url() . '/', '', ltrim($hmwp_url_mapping['to'][$index], '/')) . '(.*)',
-					            'to' => str_replace(home_url() . '/', '', ltrim($hmwp_url_mapping['from'][$index], '/')) . "$" . (substr_count($hmwp_url_mapping['from'][$index], '(') + 2),
+					            'to' => $home_root . str_replace(home_url() . '/', '', ltrim($hmwp_url_mapping['from'][$index], '/')) . "$" . (substr_count($hmwp_url_mapping['from'][$index], '(') + 2),
 				            );
 			            } else {
 				            $this->_umrewrites[] = array(
 					            'from' => '([_0-9a-zA-Z-]+/)?' . str_replace(home_url() . '/', '', ltrim($hmwp_url_mapping['to'][$index], '/')) . '$',
-					            'to' => str_replace(home_url() . '/', '', ltrim($hmwp_url_mapping['from'][$index], '/')),
+					            'to' => $home_root .  str_replace(home_url() . '/', '', ltrim($hmwp_url_mapping['from'][$index], '/')),
 				            );
 			            }
 		            }
 	            }
 
-                if (HMW_RULES_IN_CONFIG ) { //if set to add the HMW rules into config file
-                    foreach ( $this->_replace['to'] as $key => $row ) {
-                        if ($this->_replace['rewrite'][$key] ) {
-                            $this->_rewrites[] = array(
-                                'from' => '([_0-9a-zA-Z-]+/)?' . $this->_replace['to'][$key] . (substr($this->_replace['to'][$key], -1) == '/' ? "(.*)" : "$"),
-                                'to' => $this->_replace['from'][$key] . (substr($this->_replace['to'][$key], -1) == '/' ? "$" . (substr_count($this->_replace['to'][$key], '(') + 2) : ""),
-                            );
-                        }
-                    }
-                }
+	            if (HMW_RULES_IN_CONFIG ) { //if set to add the HMW rules into config file
 
-                if (HMW_RULES_IN_WP_RULES ) {//if set to add the HMW rules into WP rules area
-                    foreach ( $this->_rewrites as $rewrite ) {
-                        add_rewrite_rule($rewrite['from'], $rewrite['to'], 'top');
-                    }
-                }
+		            foreach ( $this->_replace['to'] as $key => $row ) {
+			            if ($this->_replace['rewrite'][$key] ) {
+				            if(HMWP_Classes_Tools::isDifferentWPContentPath() && strpos($this->_replace['from'][$key], HMWP_Classes_Tools::getDefault('hmwp_wp-content_url')) !== false){
+					            $this->_rewrites[] = array(
+						            'from' => '([_0-9a-zA-Z-]+/)?' . $this->_replace['to'][$key] . (substr($this->_replace['to'][$key], -1) == '/' ? "(.*)" : "$"),
+						            'to' => '/' . $this->_replace['from'][$key] . (substr($this->_replace['to'][$key], -1) == '/' ? "$" . (substr_count($this->_replace['to'][$key], '(') + 2) : ""),
+					            );
+				            }else{
+					            $this->_rewrites[] = array(
+						            'from' => '([_0-9a-zA-Z-]+/)?' . $this->_replace['to'][$key] . (substr($this->_replace['to'][$key], -1) == '/' ? "(.*)" : "$"),
+						            'to' => $home_root . $this->_replace['from'][$key] . (substr($this->_replace['to'][$key], -1) == '/' ? "$" . (substr_count($this->_replace['to'][$key], '(') + 2) : ""),
+					            );
+				            }
+			            }
+		            }
+	            }
+
+	            //if set to add the HMW rules into WP rules area
+	            if ( HMWP_Classes_Tools::getOption('hmwp_rewrites_in_wp_rules') ) {
+		            foreach ( $this->_rewrites as $rewrite ) {
+
+			            if (substr($rewrite['to'] , 0, strlen($home_root)) === $home_root) {
+				            $rewrite['to']  = substr($rewrite['to'] , strlen($home_root));
+			            }
+
+			            add_rewrite_rule($rewrite['from'], $rewrite['to'], 'top');
+		            }
+	            }
             }
         }
 
@@ -560,14 +577,7 @@ class HMWP_Models_Rewrite
         $rules .= apply_filters('hmwp_iis_hide_paths_rules', false);
         $rules .= apply_filters('hmwp_iis_hide_files_rules', false);
 
-        $path = parse_url(site_url(), PHP_URL_PATH);
-        if ($path ) {
-            $home_root = trailingslashit($path);
-        } else {
-            $home_root = '/';
-        }
-
-        $rewrites = array();
+	    $rewrites = array();
 
         //////////////IIS URL MAPPING
         $hmwp_url_mapping = json_decode(HMWP_Classes_Tools::getOption('hmwp_url_mapping'), true);
@@ -591,9 +601,9 @@ class HMWP_Models_Rewrite
             foreach ( $rewrites as $rewrite ) {
                 if (strpos($rewrite['to'], 'index.php') === false ) {
                     $rules .= '
-                <rule name="HideMyWp: ' . md5($home_root . $rewrite['from']) . '" stopProcessing="false">
+                <rule name="HideMyWp: ' . md5($rewrite['from']) . '" stopProcessing="false">
                     <match url="^' . $rewrite['from'] . '" ignoreCase="false" />
-                    <action type="Redirect" url="' . $home_root . $rewrite['to'] . '" />
+                    <action type="Redirect" url="' . $rewrite['to'] . '" />
                 </rule>';
                 }
             }
@@ -617,9 +627,9 @@ class HMWP_Models_Rewrite
             foreach ( $rewrites as $rewrite ) {
                 if (strpos($rewrite['to'], 'index.php') === false ) {
                     $rules .= '
-                <rule name="HideMyWp: ' . md5($home_root . $rewrite['from']) . '" stopProcessing="true">
+                <rule name="HideMyWp: ' . md5($rewrite['from']) . '" stopProcessing="true">
                     <match url="^' . $rewrite['from'] . '" ignoreCase="false" />
-                    <action type="Rewrite" url="' . $home_root . $rewrite['to'] . '" />
+                    <action type="Rewrite" url="' . $rewrite['to'] . '" />
                 </rule>';
                 }
             }
@@ -728,29 +738,21 @@ class HMWP_Models_Rewrite
     {
         $rewritecode = '';
 
-	    $home_root = '/';
-	    if(HMWP_Classes_Tools::isMultisites() && defined('PATH_CURRENT_SITE')){
-		    $path = PATH_CURRENT_SITE;
-	    }else {
-		    $path = parse_url(site_url(), PHP_URL_PATH);
-	    }
+	    $home_root = HMWP_Classes_Tools::getHomeRootPath();
 
-	    if ($path) {
-		    $home_root = trailingslashit($path);
-	    }
-
-		$config_file = HMWP_Classes_ObjController::getClass('HMWP_Models_Rules')->getConfFile();
+	    $config_file = HMWP_Classes_ObjController::getClass('HMWP_Models_Rules')->getConfFile();
 
 	    $form = '<a href="'.add_query_arg(array('hmwp_nonce' => wp_create_nonce('hmwp_manualrewrite'), 'action' => 'hmwp_manualrewrite')) .'" class="btn rounded-0 btn-success save" />' . esc_html__("Okay, I set it up", 'hide-my-wp') . '</a>';
 
         //If Windows Server
         if (HMWP_Classes_Tools::isIIS() ) {
+
             $this->deleteIISRules($config_file);
             if (!iis7_save_url_rewrite_rules() ) {
                 $rewritecode .= $this->getIISRules('');
 
                 if ($rewritecode <> '' ) {
-                    HMWP_Classes_Error::setError(sprintf(esc_html__('IIS detected. You need to update your %s file by adding the following lines after &lt;rules&gt; tag: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong>' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '</strong></pre>' . $form),'notice',false);
+                    HMWP_Classes_Error::setNotification(sprintf(esc_html__('IIS detected. You need to update your %s file by adding the following lines after &lt;rules&gt; tag: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong>' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '</strong></pre>' . $form),'notice',false);
                     return false; //Always show IIS as manuall action
                 }
 
@@ -760,31 +762,29 @@ class HMWP_Models_Rewrite
 
             //if there are no rewrites, return true
             if (!empty($this->_rewrites) ) {
-                if (HMWP_Classes_Tools::getOption('hmwp_mapping_file') ) {
-                    $rewritecode .= "<IfModule mod_rewrite.c>" . PHP_EOL;
-                    $rewritecode .= "RewriteEngine On" . PHP_EOL;
-                    $rewritecode .= "RewriteBase $home_root" . PHP_EOL;
-                    $rewritecode .= "RewriteCond %{HTTP:Cookie} !" . HMWP_LOGGED_IN_COOKIE . 'admin' . " [NC]" . PHP_EOL;
-                    $rewritecode .= "RewriteCond %{REQUEST_URI} ^".$home_root."wp-content/[^\.]+ [NC]" . PHP_EOL;
-                    $rewritecode .= "RewriteRule ^([_0-9a-zA-Z-]+/)?(.*)\.(js|css|scss)$ " . $home_root . "$1$2.$3h" . " [QSA,L]" . PHP_EOL;
-                    $rewritecode .= "</IfModule>\n" . PHP_EOL;
-                }
+	            if (HMWP_Classes_Tools::getOption('hmwp_mapping_file') ) {
+		            $rewritecode .= "<IfModule mod_rewrite.c>" . PHP_EOL;
+		            $rewritecode .= "RewriteEngine On" . PHP_EOL;
+		            $rewritecode .= "RewriteCond %{HTTP:Cookie} !" . HMWP_LOGGED_IN_COOKIE . 'admin' . " [NC]" . PHP_EOL;
+		            $rewritecode .= "RewriteCond %{REQUEST_URI} ^". $home_root . HMWP_Classes_Tools::getDefault('hmwp_wp-content_url') . "/[^\.]+ [NC]" . PHP_EOL;
+		            $rewritecode .= "RewriteRule ^([_0-9a-zA-Z-]+/)?(.*)\.(js|css|scss)$ " . $home_root . "$1$2.$3h" . " [QSA,L]" . PHP_EOL;
+		            $rewritecode .= "</IfModule>\n" . PHP_EOL;
+	            }
 
                 $rewritecode .= "<IfModule mod_rewrite.c>" . PHP_EOL;
                 $rewritecode .= "RewriteEngine On" . PHP_EOL;
-                $rewritecode .= "RewriteBase $home_root" . PHP_EOL;
 
 	            //Add the URL Mapping rules
 	            if (!empty($this->_umrewrites) ) {
 		            foreach ( $this->_umrewrites as $rewrite ) {
-			            $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $home_root . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
+			            $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
 		            }
 	            }
 
 	            //Add the New Paths rules
 	            foreach ( $this->_rewrites as $rewrite ) {
                     if (strpos($rewrite['to'], 'index.php') === false ) {
-                        $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $home_root . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
+                        $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
                     }
                 }
                 $rewritecode .= "</IfModule>" . PHP_EOL . PHP_EOL;
@@ -792,7 +792,7 @@ class HMWP_Models_Rewrite
 
             if ($rewritecode <> '' ) {
                 if (!HMWP_Classes_ObjController::getClass('HMWP_Models_Rules')->writeInHtaccess($rewritecode, 'HMWP_RULES') ) {
-                    HMWP_Classes_Error::setError(sprintf(esc_html__('Config file is not writable. Create the file if not exists or copy to %s file the following lines: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong># BEGIN HMWP_RULES<br />' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '# END HMWP_RULES<br /></strong></pre>' . $form),'notice',false);
+                    HMWP_Classes_Error::setNotification(sprintf(esc_html__('Config file is not writable. Create the file if not exists or copy to %s file the following lines: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong># BEGIN HMWP_RULES<br />' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '# END HMWP_RULES<br /></strong></pre>' . $form),'notice',false);
                     $success = false;
                 }
             } else {
@@ -804,7 +804,7 @@ class HMWP_Models_Rewrite
 	        //Add the URL Mapping rules
 	        if (!empty($this->_umrewrites)) {
 		        foreach ( $this->_umrewrites as $rewrite ) {
-			        $rewritecode .= 'Source: <strong>^' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $home_root . $rewrite['to'] . "</strong> Redirect type: 301 Permanent;<br />";
+			        $rewritecode .= 'Source: <strong>^' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $rewrite['to'] . "</strong> Rewrite type: 301 Permanent;<br />";
 		        }
 	        }
 
@@ -812,17 +812,17 @@ class HMWP_Models_Rewrite
 	        if (!empty($this->_rewrites) ) {
 		        foreach ( $this->_rewrites as $rewrite ) {
 			        if(PHP_VERSION_ID >= 70400 ){
-				        $rewritecode .= 'Source: <strong>^/' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $home_root . $rewrite['to'] . "</strong> Redirect type: Break;<br />";
+				        $rewritecode .= 'Source: <strong>^/' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $rewrite['to'] . "</strong> Rewrite type: Break;<br />";
 			        }elseif (strpos($rewrite['to'], 'index.php') === false && (strpos($rewrite['to'], HMWP_Classes_Tools::$default['hmwp_wp-content_url']) !== false || strpos($rewrite['to'], HMWP_Classes_Tools::$default['hmwp_wp-includes_url']) !== false)) {
 				        if (strpos($rewrite['to'], HMWP_Classes_Tools::$default['hmwp_login_url']) === false && strpos($rewrite['to'], HMWP_Classes_Tools::$default['hmwp_admin_url']) === false ) {
-					        $rewritecode .= 'Source: <strong>^/' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $home_root . $rewrite['to'] . "</strong> Redirect type: Break;<br />";
+					        $rewritecode .= 'Source: <strong>^/' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $rewrite['to'] . "</strong> Rewrite type: Break;<br />";
 				        }
 			        }
 		        }
 	        }
 
             if ($rewritecode <> '' ) {
-                HMWP_Classes_Error::setError(sprintf(esc_html__('WpEngine detected. Add the redirects in the WpEngine Redirect rules panel %s.', 'hide-my-wp'), '<strong><a href="https://wpengine.com/support/redirect/" target="_blank" style="color: red">' . esc_html__("Learn How To Add the Code", 'hide-my-wp') . '</a></strong> <br /><br /><pre>' . $rewritecode . '</pre>' . $form),'notice',false);
+                HMWP_Classes_Error::setNotification(sprintf(esc_html__('WpEngine detected. Add the redirects in the WpEngine Redirect rules panel %s.', 'hide-my-wp'), '<strong><a href="https://wpengine.com/support/redirect/" target="_blank" style="color: red">' . esc_html__("Learn How To Add the Code", 'hide-my-wp') . '</a></strong> <br /><br /><pre>' . $rewritecode . '</pre>' . $form),'notice',false);
                 $success = false; //always show the WPEngine Rules as manually action
             }
 
@@ -834,19 +834,19 @@ class HMWP_Models_Rewrite
 	        //Add the URL Mapping rules
 	        if (!empty($this->_umrewrites)) {
 		        foreach ( $this->_umrewrites as $rewrite ) {
-			        $rewritecode .= 'Source: <strong>^' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $home_root . $rewrite['to'] . "</strong> Redirect type: 301 Permanent;<br />";
+			        $rewritecode .= 'Source: <strong>^' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $rewrite['to'] . "</strong> Rewrite type: 301 Permanent;<br />";
 		        }
 	        }
 
 	        //Add the New Paths rules
 	        if (!empty($this->_rewrites) ) {
 		        foreach ( $this->_rewrites as $rewrite ) {
-			        $rewritecode .= 'Source: <strong>^/' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $home_root . $rewrite['to'] . "</strong> Redirect type: Break;<br />";
+			        $rewritecode .= 'Source: <strong>^/' . str_replace(array('.css', '.js'), array('\.css', '\.js'), $rewrite['from']) . '</strong> Destination: <strong>' . $rewrite['to'] . "</strong> Rewrite type: Break;<br />";
 		        }
 	        }
 
 	        if ($rewritecode <> '' ) {
-		        HMWP_Classes_Error::setError(sprintf(esc_html__('Flywheel detected. Add the redirects in the Flywheel Redirect rules panel %s.', 'hide-my-wp'), '<strong><a href="https://getflywheel.com/wordpress-support/flywheel-redirects/" target="_blank" style="color: red">' . esc_html__("Learn How To Add the Code", 'hide-my-wp') . '</a></strong> <br /><br /><pre>' . $rewritecode . '</pre>' . $form),'notice',false);
+		        HMWP_Classes_Error::setNotification(sprintf(esc_html__('Flywheel detected. Add the redirects in the Flywheel Redirect rules panel %s.', 'hide-my-wp'), '<strong><a href="https://getflywheel.com/wordpress-support/flywheel-redirects/" target="_blank" style="color: red">' . esc_html__("Learn How To Add the Code", 'hide-my-wp') . '</a></strong> <br /><br /><pre>' . $rewritecode . '</pre>' . $form),'notice',false);
 		        $success = false; //always show the Flywheel Rules as manually action
 	        }
 
@@ -854,16 +854,14 @@ class HMWP_Models_Rewrite
         } elseif ((HMWP_Classes_Tools::isApache() || HMWP_Classes_Tools::isLitespeed()) ) {
             //if there are no rewrites, return true
             if (!empty($this->_rewrites) ) {
-                if (HMWP_Classes_Tools::getOption('hmwp_mapping_file') ) {
-                    $rewritecode .= "<IfModule mod_rewrite.c>" . PHP_EOL;
-                    $rewritecode .= "RewriteEngine On" . PHP_EOL;
-                    $rewritecode .= "RewriteBase $home_root" . PHP_EOL;
-                    $rewritecode .= "RewriteCond %{HTTP:Cookie} !" . HMWP_LOGGED_IN_COOKIE . 'admin' . " [NC]" . PHP_EOL;
-                    $rewritecode .= "RewriteCond %{REQUEST_URI} ^".$home_root."wp-content/[^\.]+ [NC]" . PHP_EOL;
-                    $rewritecode .= "RewriteRule ^([_0-9a-zA-Z-]+/)?(.*)\.(js|css|scss)$ " . $home_root . "$1$2.$3h" . " [QSA,L]" . PHP_EOL;
-                    $rewritecode .= "</IfModule>\n" . PHP_EOL;
-                }
-
+	            if (HMWP_Classes_Tools::getOption('hmwp_mapping_file') ) {
+		            $rewritecode .= "<IfModule mod_rewrite.c>" . PHP_EOL;
+		            $rewritecode .= "RewriteEngine On" . PHP_EOL;
+		            $rewritecode .= "RewriteCond %{HTTP:Cookie} !" . HMWP_LOGGED_IN_COOKIE . 'admin' . " [NC]" . PHP_EOL;
+		            $rewritecode .= "RewriteCond %{REQUEST_URI} ^".$home_root. HMWP_Classes_Tools::getDefault('hmwp_wp-content_url') . "/[^\.]+ [NC]" . PHP_EOL;
+		            $rewritecode .= "RewriteRule ^([_0-9a-zA-Z-]+/)?(.*)\.(js|css|scss)$ " . $home_root . "$1$2.$3h" . " [QSA,L]" . PHP_EOL;
+		            $rewritecode .= "</IfModule>\n" . PHP_EOL;
+	            }
 
                 if (HMWP_Classes_Tools::getOption('hmwp_file_cache') ) {
                     $rewritecode .= '<IfModule mod_expires.c>' . PHP_EOL;
@@ -898,19 +896,18 @@ class HMWP_Models_Rewrite
 
                 $rewritecode .= "<IfModule mod_rewrite.c>" . PHP_EOL;
                 $rewritecode .= "RewriteEngine On" . PHP_EOL;
-                $rewritecode .= "RewriteBase $home_root" . PHP_EOL;
 
 	            //Add the URL Mapping rules
 	            if (!empty($this->_umrewrites) ) {
 		            foreach ( $this->_umrewrites as $rewrite ) {
-			            $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $home_root . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
+			            $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
 		            }
 	            }
 
 	            //Add the New Paths rules
 	            foreach ( $this->_rewrites as $rewrite ) {
                     if (strpos($rewrite['to'], 'index.php') === false ) {
-                        $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $home_root . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
+                        $rewritecode .= 'RewriteRule ^' . $rewrite['from'] . ' ' . $rewrite['to'] . " [QSA,L]" . PHP_EOL;
                     }
                 }
                 $rewritecode .= "</IfModule>" . PHP_EOL . PHP_EOL;
@@ -919,7 +916,7 @@ class HMWP_Models_Rewrite
 
             if ($rewritecode <> '' ) {
                 if (!HMWP_Classes_ObjController::getClass('HMWP_Models_Rules')->writeInHtaccess($rewritecode, 'HMWP_RULES') ) {
-                    HMWP_Classes_Error::setError(sprintf(esc_html__('Config file is not writable. Create the file if not exists or copy to %s file the following lines: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong># BEGIN HMWP_RULES<br />' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '# END HMWP_RULES</strong></pre>' . $form),'notice',false);
+                    HMWP_Classes_Error::setNotification(sprintf(esc_html__('Config file is not writable. Create the file if not exists or copy to %s file the following lines: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong># BEGIN HMWP_RULES<br />' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '# END HMWP_RULES</strong></pre>' . $form),'notice',false);
                     return false;
                 }
             } else {
@@ -941,17 +938,24 @@ class HMWP_Models_Rewrite
 	            //Add the URL Mapping rules
 	            if (!empty($this->_umrewrites) ) {
 		            foreach ( $this->_umrewrites as $rewrite ) {
-			            $rewritecode .= 'rewrite ^/' . $rewrite['from'] . ' ' . $home_root . $rewrite['to'] . ";<br />";
+			            $rewritecode .= 'rewrite ^/' . $rewrite['from'] . ' ' . $rewrite['to'] . ";<br />";
 		            }
 	            }
 
 	            //Add the New Paths rules
 	            foreach ( $this->_rewrites as $rewrite ) {
+
+					if(HMWP_Classes_Tools::isCloudPanel()){
+						if (strpos($rewrite['to'], 'wp-login.php') !== false ) {
+							continue;
+						}
+					}
+
                     if (strpos($rewrite['to'], 'index.php') === false ) {
                         if (strpos($rewrite['from'], '$') ) {
-                            $rewritecode .= 'rewrite ^/' . $rewrite['from'] . ' ' . $home_root . $rewrite['to'] . ";<br />";
+                            $rewritecode .= 'rewrite ^/' . $rewrite['from'] . ' ' . $rewrite['to'] . ";<br />";
                         } else {
-                            $rewritecode .= 'rewrite ^/' . $rewrite['from'] . ' ' . $home_root . $rewrite['to'] . " last;<br />";
+                            $rewritecode .= 'rewrite ^/' . $rewrite['from'] . ' ' . $rewrite['to'] . " last;<br />";
                         }
                     }
                 }
@@ -961,7 +965,7 @@ class HMWP_Models_Rewrite
                 $rewritecode = $cachecode . 'if (!-e $request_filename) {' . PHP_EOL . $rewritecode . '}';
 
                 if (!HMWP_Classes_ObjController::getClass('HMWP_Models_Rules')->writeInNginx($rewritecode, 'HMWP_RULES') ) {
-                    HMWP_Classes_Error::setError(sprintf(esc_html__('Config file is not writable. You have to added it manually at the beginning of the %s file: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong># BEGIN HMWP_RULES<br />' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '# END HMWP_RULES</strong></pre>'),'notice',false);
+                    HMWP_Classes_Error::setNotification(sprintf(esc_html__('Config file is not writable. You have to added it manually at the beginning of the %s file: %s', 'hide-my-wp'), '<strong>' . $config_file . '</strong>', '<br /><br /><pre><strong># BEGIN HMWP_RULES<br />' . htmlentities(str_replace('    ', ' ', $rewritecode)) . '# END HMWP_RULES</strong></pre>'),'notice',false);
                     return false;
                 }
 
@@ -1097,10 +1101,20 @@ class HMWP_Models_Rewrite
 				} elseif ($query == '?action=register' && HMWP_Classes_Tools::getOption('hmwp_register_url') <> '' ) {
 					$url = home_url(HMWP_Classes_Tools::getOption('hmwp_register_url'), $scheme);
 				} else {
-					$url = home_url('', $scheme) . '/' . HMWP_Classes_Tools::getOption('hmwp_login_url') . $query;
 
-					if (HMWP_Classes_Tools::getValue('noredirect') ) {
-						$url = add_query_arg(array('noredirect' => true), $url);
+					$url = home_url('', $scheme);
+					if(function_exists('mb_stripos')){
+						if (mb_stripos($url,'?') !== false) {
+							$url = substr($url,0,mb_stripos($url,'?'));
+						}
+					}elseif(stripos($url,'?') !== false){
+						$url = substr($url,0,stripos($url,'?'));
+					}
+
+					$url .= '/' . HMWP_Classes_Tools::getOption('hmwp_login_url') . $query;
+
+					if (HMWP_Classes_Tools::getValue('nordt') ) {
+						$url = add_query_arg(array('nordt' => true), $url);
 					}
 				}
 			}
@@ -1171,10 +1185,20 @@ class HMWP_Models_Rewrite
 				} elseif ($query == '?action=register' && HMWP_Classes_Tools::getOption('hmwp_register_url') <> '' ) {
 					$url = site_url(HMWP_Classes_Tools::getOption('hmwp_register_url'), $scheme);
 				} else {
-					$url = site_url('', $scheme) . '/' . HMWP_Classes_Tools::getOption('hmwp_login_url') . $query;
 
-					if (HMWP_Classes_Tools::getValue('noredirect') ) {
-						$url = add_query_arg(array('noredirect' => true), $url);
+					$url = site_url('', $scheme);
+					if(function_exists('mb_stripos')){
+						if (mb_stripos($url,'?') !== false) {
+							$url = substr($url,0,mb_stripos($url,'?'));
+						}
+					}elseif(stripos($url,'?') !== false){
+						$url = substr($url,0,stripos($url,'?'));
+					}
+
+					$url .= '/' . HMWP_Classes_Tools::getOption('hmwp_login_url') . $query;
+
+					if (HMWP_Classes_Tools::getValue('nordt') ) {
+						$url = add_query_arg(array('nordt' => true), $url);
 					}
 				}
 			}
@@ -1305,7 +1329,7 @@ class HMWP_Models_Rewrite
     {
         $plugins = array('rocket-lazy-load');
         if (!is_admin() ) {
-            if ($plugin <> '' && $url <> '' && $this->searchInString($url, $plugins) ) {
+            if ($plugin <> '' && $url <> '' && HMWP_Classes_Tools::searchInString($url, $plugins) ) {
                 $url = $this->find_replace_url($url);
             }
         }
@@ -1373,7 +1397,7 @@ class HMWP_Models_Rewrite
                 }
             }
 
-            $url = home_url(HMWP_Classes_Tools::getOption('hmwp_login_url'));
+            $url = site_url(HMWP_Classes_Tools::getOption('hmwp_login_url'));
         }
 
         return $url;
@@ -1435,7 +1459,6 @@ class HMWP_Models_Rewrite
             /////////////////////////////////////////////////////////
         }
 
-        add_filter('wp_safe_redirect_fallback', array($this, 'loopCheck'), 99, 1);
         add_filter('wp_redirect', array($this, 'loopCheck'), 99, 1);
 
         //remove clasiera theme loop
@@ -1444,7 +1467,7 @@ class HMWP_Models_Rewrite
 
         //If Clean Login option is active or too many redirects
         $isRedirect = HMWP_Classes_Tools::getCustomLoginURL(false);
-        if (HMWP_Classes_Tools::getValue('noredirect') || $isRedirect || HMWP_Classes_Tools::getOption('hmwp_remove_third_hooks') ) {
+        if (HMWP_Classes_Tools::getValue('nordt') || $isRedirect || HMWP_Classes_Tools::getOption('hmwp_remove_third_hooks') ) {
             remove_all_actions('login_init');
             remove_all_actions('login_redirect');
             remove_all_actions('bbp_redirect_login');
@@ -1497,7 +1520,7 @@ class HMWP_Models_Rewrite
      */
     public function lostpassword_redirect()
     {
-        return home_url('wp-login.php?checkemail=confirm');
+        return site_url('wp-login.php?checkemail=confirm');
     }
 
     /**
@@ -1507,7 +1530,7 @@ class HMWP_Models_Rewrite
      */
     public function registration_redirect()
     {
-        return home_url('wp-login.php?checkemail=registered');
+        return site_url('wp-login.php?checkemail=registered');
     }
 
     /**
@@ -1567,12 +1590,12 @@ class HMWP_Models_Rewrite
         if (!isset($args['_wpnonce']) ) {
             $args['_wpnonce'] = wp_create_nonce('log-out');
             //correct the logout URL
-            $url = add_query_arg(array('_wpnonce' => $args['_wpnonce']), home_url('wp-login.php?action=logout', 'login'));
+            $url = add_query_arg(array('_wpnonce' => $args['_wpnonce']), site_url('wp-login.php?action=logout', 'login'));
         }
 
         if (HMWP_Classes_Tools::getOption('hmwp_logout_url') <> '' ) {
             //add the new URL
-            $url = home_url() . '/' . add_query_arg(array('_wpnonce' => $args['_wpnonce']), HMWP_Classes_Tools::getOption('hmwp_logout_url'));
+            $url = site_url() . '/' . add_query_arg(array('_wpnonce' => $args['_wpnonce']), HMWP_Classes_Tools::getOption('hmwp_logout_url'));
         }
 
         return $url;
@@ -1693,7 +1716,7 @@ class HMWP_Models_Rewrite
 
         if (HMWP_Classes_Tools::$default['hmwp_login_url'] <> HMWP_Classes_Tools::getOption('hmwp_login_url') ) {
             if (strpos($redirect, 'wp-login') !== false ) {
-                $redirect = home_url(HMWP_Classes_Tools::getOption('hmwp_login_url'));
+                $redirect = site_url(HMWP_Classes_Tools::getOption('hmwp_login_url'));
             }
         }
 
@@ -1719,7 +1742,7 @@ class HMWP_Models_Rewrite
         }
 
         //Stop loops and other hooks
-        if (HMWP_Classes_Tools::getValue('noredirect') || HMWP_Classes_Tools::getOption('hmwp_remove_third_hooks') ) {
+        if (HMWP_Classes_Tools::getValue('nordt') || HMWP_Classes_Tools::getOption('hmwp_remove_third_hooks') ) {
 
             //remove other redirect hooks
             remove_all_actions('login_redirect');
@@ -1780,7 +1803,9 @@ class HMWP_Models_Rewrite
             $redirect_url = parse_url($url, PHP_URL_HOST) . parse_url($url, PHP_URL_PATH);
             if ($current_url <> '' && $redirect_url <> '' ) {
                 if ($current_url == $redirect_url ) {
-                    return add_query_arg(array('noredirect' => true), $url);
+                    return add_query_arg(array('nordt' => true), $url);
+                }else{
+	                return remove_query_arg(array('nordt'), $url);
                 }
             }
 
@@ -1821,9 +1846,9 @@ class HMWP_Models_Rewrite
 	            add_filter('hmwp_change_home_url', '__return_true');
 	            add_filter('hmwp_change_site_url', '__return_true');
 
-                if ($this->searchInString($url, $paths) ) {
-                    if (home_url(HMWP_Classes_Tools::getOption('hmwp_login_url'), 'relative') <> $url ) {
-                        return add_query_arg(array('noredirect' => true), home_url(HMWP_Classes_Tools::getOption('hmwp_login_url')));
+                if (HMWP_Classes_Tools::searchInString($url, $paths) ) {
+                    if (site_url(HMWP_Classes_Tools::getOption('hmwp_login_url'), 'relative') <> $url ) {
+                        return add_query_arg(array('nordt' => true), site_url(HMWP_Classes_Tools::getOption('hmwp_login_url')));
                     }
                 }
             }
@@ -1866,15 +1891,22 @@ class HMWP_Models_Rewrite
                         site_url('wp-admin', 'relative')
                     );
 
-                    if ($this->searchInString($url, $paths)) {
+                    if (HMWP_Classes_Tools::searchInString($url, $paths)) {
                         if (!HMWP_Classes_Tools::userCan('manage_options')) {
                             $this->getNotFound($url);
                         }
                     }
                 }
             } else {
+
+                //Check the whitelist IPs for accessing the hide paths
+                if (HMWP_Classes_Tools::getOption('hmwp_detectors_block') ) {
+                    HMWP_Classes_ObjController::getClass('HMWP_Models_Compatibility')->checkBlacklistIPs();
+                }
+
                 //if is set to hide the urls or not logged in
                 if ($url <> '') {
+
                     /////////////////////////////////////////////////////
                     //Hide Admin URL when changed
                     if (HMWP_Classes_Tools::$default['hmwp_admin_url'] <> HMWP_Classes_Tools::getOption('hmwp_admin_url')) {
@@ -1902,7 +1934,7 @@ class HMWP_Models_Rewrite
                         );
                         $paths = array_unique($paths);
 
-                        if ($this->searchInString($url, $paths)) {
+                        if (HMWP_Classes_Tools::searchInString($url, $paths)) {
                             if (site_url(HMWP_Classes_Tools::getOption('hmwp_admin_url'), 'relative') <> $url && HMWP_Classes_Tools::getOption('hmwp_hide_admin')) {
                                 $this->getNotFound($url);
                             }
@@ -1913,6 +1945,8 @@ class HMWP_Models_Rewrite
                         }
                     }
 
+                    /////////////////////////////////////////////////////
+                    //Protect lost password and register
                     if ($http_post) {
                         if (HMWP_Classes_Tools::getOption('hmwp_lostpassword_url') <> '') {
                             if (strpos($url, '/' . HMWP_Classes_Tools::getOption('hmwp_lostpassword_url')) !== false) {
@@ -1932,6 +1966,32 @@ class HMWP_Models_Rewrite
                     if (HMWP_Classes_Tools::getOption('hmwp_hide_wplogin') || HMWP_Classes_Tools::getOption('hmwp_hide_login')) {
 
                         if (HMWP_Classes_Tools::$default['hmwp_login_url'] <> HMWP_Classes_Tools::getOption('hmwp_login_url')) {
+
+	                        $paths = array(
+		                        home_url('wp-login.php', 'relative'),
+		                        home_url('wp-login', 'relative'),
+		                        site_url('wp-login.php', 'relative'),
+		                        site_url('wp-login', 'relative'),
+	                        );
+
+	                        if (!HMWP_Classes_Tools::isWpengine() && HMWP_Classes_Tools::getOption('hmwp_hide_login')) {
+
+		                        $paths[] = home_url('login', 'relative');
+		                        $paths[] = site_url('login', 'relative');
+
+	                        }
+
+	                        $paths = array_unique($paths);
+
+                            if (HMWP_Classes_Tools::searchInString($url, $paths)) {
+
+                                if (site_url(HMWP_Classes_Tools::getOption('hmwp_login_url'), 'relative') <> $url) {
+                                    $this->getNotFound($url);
+                                }
+
+                            }
+                        } elseif (defined('HMWP_DEFAULT_LOGIN') && HMWP_DEFAULT_LOGIN <> HMWP_Classes_Tools::$default['hmwp_login_url']) {
+
 	                        $paths = array(
 		                        home_url('wp-login.php', 'relative'),
 		                        home_url('wp-login', 'relative'),
@@ -1948,12 +2008,13 @@ class HMWP_Models_Rewrite
 
 	                        $paths = array_unique($paths);
 
-                            if ($this->searchInString($url, $paths)) {
+	                        if (HMWP_Classes_Tools::searchInString($url, $paths)) {
 
-                                if (home_url(HMWP_Classes_Tools::getOption('hmwp_login_url'), 'relative') <> $url) {
-                                    $this->getNotFound($url);
-                                }
-                            }
+		                        if (site_url(HMWP_DEFAULT_LOGIN, 'relative') <> $url) {
+			                        $this->getNotFound($url);
+		                        }
+
+	                        }
                         }
                     }
 
@@ -1964,7 +2025,7 @@ class HMWP_Models_Rewrite
                             home_url('author', 'relative'),
                             site_url('author', 'relative'),
                         );
-                        if ($this->searchInString($url, $paths)) {
+                        if (HMWP_Classes_Tools::searchInString($url, $paths)) {
                             $this->getNotFound($url);
                         }
                     }
@@ -1978,17 +2039,19 @@ class HMWP_Models_Rewrite
 			                site_url('xmlrpc.php', 'relative'),
 			                site_url('wp-trackback.php', 'relative'),
 		                );
-		                if ($this->searchInString($url, $paths)) {
+		                if (HMWP_Classes_Tools::searchInString($url, $paths)) {
 			                $this->getNotFound($url);
 		                }
 	                }
 
+                    /////////////////////////////////////////////////////
+                    //disable rest api
 	                if (HMWP_Classes_Tools::getOption('hmwp_disable_rest_api')) {
 		                $paths = array(
 			                home_url('wp-json', 'relative'),
 			                home_url(HMWP_Classes_Tools::getOption('hmwp_wp-json'), 'relative'),
 		                );
-		                if ($this->searchInString($url, $paths)) {
+		                if (HMWP_Classes_Tools::searchInString($url, $paths)) {
 			                $this->getNotFound($url);
 		                }
 	                }
@@ -2003,7 +2066,7 @@ class HMWP_Models_Rewrite
                         site_url('upgrade.php', 'relative'),
                         site_url('wp-config.php', 'relative'),
                     );
-                    if ($this->searchInString($url, $paths)) {
+                    if (HMWP_Classes_Tools::searchInString($url, $paths)) {
                         $this->getNotFound($url);
                     }
 
@@ -2013,7 +2076,7 @@ class HMWP_Models_Rewrite
                             home_url('wp-signup.php', 'relative'),
                             site_url('wp-signup.php', 'relative'),
                         );
-                        if ($this->searchInString($url, $paths)) {
+                        if (HMWP_Classes_Tools::searchInString($url, $paths)) {
                             $this->getNotFound($url);
                         }
                     }
@@ -2027,25 +2090,6 @@ class HMWP_Models_Rewrite
 	        add_filter('hmwp_change_site_url', '__return_true');
 
         }
-    }
-
-    /**
-     * Search part of string in array
-     *
-     * @param string $needle
-     * @param array $haystack
-     *
-     * @return bool
-     */
-    public function searchInString( $needle, $haystack )
-    {
-        foreach ( $haystack as $value ) {
-            if (stripos($needle, $value) !== false ) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -2191,6 +2235,13 @@ class HMWP_Models_Rewrite
             $find = array_map(array($this, 'addDomainUrl'), (array)$this->_replace['from']);
             $replace = array_map(array($this, 'addDomainUrl'), (array)$this->_replace['to']);
 
+	        //make sure the main domain is added on wp multisite with subdirectories
+	        //used for custom wp-content, custom wp-includes, custom uploads
+	        if(HMWP_Classes_Tools::isMultisiteWithPath() || HMWP_Classes_Tools::isDifferentWPContentPath()){
+		        $find = array_merge($find, array_map(array($this, 'addMainDomainUrl'), (array)$this->_replace['from']));
+		        $replace = array_merge($replace, array_map(array($this, 'addMainDomainUrl'), (array)$this->_replace['to']));
+	        }
+
             //change the javascript urls
             $findencoded = array_map(array($this, 'changeEncodedURL'), (array)$this->_replace['from']);
             $replaceencoded = array_map(array($this, 'changeEncodedURL'), (array)$this->_replace['to']);
@@ -2223,6 +2274,27 @@ class HMWP_Models_Rewrite
         $this->_replace['to'] = array_merge($remplacetext, $replacecdns, $replace, $replaceencoded, $replaceencodedfinal, $replaceurlmapping);
 
     }
+
+	/**
+	 * Add the main domain into URL
+	 * Used for multisites with paths
+	 *
+	 * @param $url
+	 *
+	 * @return string
+	 */
+	public function addMainDomainUrl( $url )
+	{
+
+		//Set the blog URL
+		$mainsiteurl = str_replace('www.', '', parse_url(site_url(), PHP_URL_HOST) );
+
+		if (strpos($url, $mainsiteurl) === false ) {
+			return $mainsiteurl . '/' . $url;
+		}
+
+		return $url;
+	}
 
     /**
      * Add the domain into URL
@@ -2364,15 +2436,17 @@ class HMWP_Models_Rewrite
 
             if (isset($this->_replace['from']) && isset($this->_replace['to']) && !empty($this->_replace['from']) && !empty($this->_replace['to']) ) {
 
-                foreach ( $this->_replace['rewrite'] as $index => $value ) {
-                    //add only the paths or the design path
-                    if (($index && isset($this->_replace['to'][$index]) && substr($this->_replace['to'][$index], -1) == '/')
-                        || strpos($this->_replace['to'][$index], '/' . HMWP_Classes_Tools::getOption('hmwp_themes_style'))
-                    ) {
-                        $this->_replace['from'][] = $this->_replace['from'][$index];
-                        $this->_replace['to'][] = $this->_replace['to'][$index];
-                    }
-                }
+				if(!empty($this->_replace['rewrite'])) {
+					foreach ( $this->_replace['rewrite'] as $index => $value ) {
+						//add only the paths or the design path
+						if ( ( $index && isset( $this->_replace['to'][ $index ] ) && substr( $this->_replace['to'][ $index ], - 1 ) == '/' )
+						     || strpos( $this->_replace['to'][ $index ], '/' . HMWP_Classes_Tools::getOption( 'hmwp_themes_style' ) )
+						) {
+							$this->_replace['from'][] = $this->_replace['from'][ $index ];
+							$this->_replace['to'][]   = $this->_replace['to'][ $index ];
+						}
+					}
+				}
 
                 //Don't replace include if content was already replaced
                 $url = str_ireplace($this->_replace['from'], $this->_replace['to'], $url);
@@ -2655,18 +2729,30 @@ class HMWP_Models_Rewrite
     {
         $find = $replace = array();
 
-        //Remove source commets
+        //Remove source comments
         if (HMWP_Classes_Tools::getOption('hmwp_hide_comments') ) {
             $content = preg_replace_callback('/<!--([\\s\\S]*?)-->/', array($this, '_commentRemove'), $content);
         }
 
         //Remove versions
         if (HMWP_Classes_Tools::getOption('hmwp_hide_version') ) {
-            $find[] = '/(\?|\&|\&#038;)ver=[0-9a-zA-Z\.\_\-\+]+/';
-            $replace[] = '';
+            if(HMWP_Classes_Tools::getOption('hmwp_hide_version_random') ){
+                if(function_exists('is_user_logged_in') && is_user_logged_in()){
+                    HMWP_Classes_Tools::saveOptions('hmwp_hide_version_random', mt_rand(11111,99999));
+                }
+                $find[] = '/(\?|\&#038;|\&)ver=[0-9a-zA-Z\.\_\-\+]+(\&#038;|\&)/';
+                $replace[] = '$1rnd=' . HMWP_Classes_Tools::getOption('hmwp_hide_version_random'). '$2';
+                $find[] = '/(\?|\&#038;|\&)ver=[0-9a-zA-Z\.\_\-\+]+("|\')/';
+                $replace[] = '$1rnd=' . HMWP_Classes_Tools::getOption('hmwp_hide_version_random'). '$2';
+            }else{
+                $find[] = '/(\?|\&#038;|\&)ver=[0-9a-zA-Z\.\_\-\+]+(\&#038;|\&)/';
+                $replace[] = '$1';
+                $find[] = '/(\?|\&#038;|\&)ver=[0-9a-zA-Z\.\_\-\+]+("|\')/';
+                $replace[] = '$2';
+            }
         }
 
-        if (HMWP_Classes_Tools::getOption('hmwp_hide_in_sitemap') ) {
+        if (HMWP_Classes_Tools::getOption('hmwp_hide_in_sitemap')  && HMWP_Classes_Tools::getOption('hmwp_hide_author_in_sitemap')) {
             $find[] = '/(<\?xml-stylesheet[\s])([^>]+>)/i';
             $replace[] = '';
         }
@@ -2714,6 +2800,9 @@ class HMWP_Models_Rewrite
 
             $find[] = '/<link[^>]*type=[\'"]application\/rss\+xml[\'"][^>]*rel=[\'"]alternate[\'"][^>]*>/i';
             $replace[] = '';
+
+	        $find[] = '/<link[^>]*type=[\'"]application\/atom\+xml[\'"][^>]*>/i';
+	        $replace[] = '';
         }
 
         //remove wp-json
@@ -2734,7 +2823,8 @@ class HMWP_Models_Rewrite
     {
 
         //Force to change the URL for xml content types
-        if (HMWP_Classes_Tools::isContentHeader(array('text/xml','application/xml'))) {
+	    if (HMWP_Classes_Tools::isContentHeader(array('text/xml','application/xml')) ||
+	        (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'],'.xml') !== false)) {
 
 	        //change and replace paths
 	        $this->clearRedirect();
@@ -2747,7 +2837,10 @@ class HMWP_Models_Rewrite
 
             if($content <> '') {
                 $content = str_ireplace($this->_replace['from'], $this->_replace['to'], $content);
-                $content = $this->replaceHeadersAndTags($content);
+
+				if(HMWP_Classes_Tools::getOption('hmwp_hide_author_in_sitemap')) {
+					$content = $this->replaceHeadersAndTags( $content );
+				}
 
                 ob_end_clean();
                 echo $content;
@@ -2766,7 +2859,8 @@ class HMWP_Models_Rewrite
     {
 
         //Force to change the URL for xml content types
-        if (HMWP_Classes_Tools::isContentHeader(array('text/plain'))) {
+        if (HMWP_Classes_Tools::isContentHeader(array('text/plain')) ||
+            (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'],'.txt') !== false)) {
 
 	        //change and replace paths
 	        $this->clearRedirect();
@@ -2844,11 +2938,30 @@ class HMWP_Models_Rewrite
 
     /**
      * Hide the rest api from the source code
+     *
+     * @return void
+     * @throws Exception
      */
     public function hideRestApi()
     {
         remove_action('wp_head', 'rest_output_link_wp_head');
         remove_action('template_redirect', 'rest_output_link_header', 11);
+
+    }
+
+    /**
+     * Disable the rest Route param access
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function hideRestRouteParam()
+    {
+        /////////////////////////////////////////////////////
+        //hide rest_route when rest api path is changed
+        if(HMWP_Classes_Tools::getValue('rest_route')){
+            $this->getNotFound(false);
+        }
     }
 
     /**

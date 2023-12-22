@@ -11,6 +11,8 @@
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<link rel="profile" href="https://gmpg.org/xfn/11">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- AJOUT DU SCRIPT JQUERY-->
+
 
 	<?php wp_head(); ?>
 </head>
@@ -63,9 +65,18 @@ $lien=get_field('lien_google_maps', 161);
 			<div class="popup-address">
 				<p><b>Le lieu</b></p>
 
-				<?php echo $lieu; ?>
-				<a class="popup-link" href="<?php echo $lien; ?>" target="_blank">Voir sur Google Maps</a>
+			  <!-- Utilisation de vardump pour vérifier la var lieu<?phpvar_dump($lieu); ?>-->
+
+				<?php
+				// Supprimez les sauts de ligne et autres espaces indésirables
+				$lieu_cleaned = trim(str_replace(array("\r", "\n"), '', $lieu));
+
+				// Construit l'URL de recherche Google Maps
+				$google_maps_url = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($lieu_cleaned);
+				?>
+				<a class="popup-link" href="<?php echo esc_url($google_maps_url); ?>" target="_blank">Voir sur Google Maps</a>
 			</div>
+
 			
 			<div class="popup-address">
 				<p><b>La date</b></p>
@@ -83,9 +94,11 @@ $lien=get_field('lien_google_maps', 161);
 <!-- Code pour fermer la popup -->
 
 <script>
-$('.popup-close').click(function(){
-	$(this).parent().hide();
-})
+$(document).ready(function(){
+    $('.popup-close').click(function(){
+        $(this).closest('.popup-salon').hide(); // MODIFICATION DU CODE
+    });
+});
 </script>
 
 

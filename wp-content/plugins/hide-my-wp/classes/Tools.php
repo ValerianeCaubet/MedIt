@@ -46,7 +46,7 @@ class HMWP_Classes_Tools
                 @ini_set('memory_limit', apply_filters('admin_memory_limit', WP_MAX_MEMORY_LIMIT));
             } else {
                 define('HMWP_DISABLE', true);
-                HMWP_Classes_Error::setError(sprintf(esc_html__('Your memory limit is %sM. You need at least %sM to prevent loading errors in frontend. See: %sIncreasing memory allocated to PHP%s', 'hide-my-wp'), $maxmemory, 64, '<a href="https://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP" target="_blank">', '</a>'));
+                HMWP_Classes_Error::setNotification(sprintf(esc_html__('Your memory limit is %sM. You need at least %sM to prevent loading errors in frontend. See: %sIncreasing memory allocated to PHP%s', 'hide-my-wp'), $maxmemory, 64, '<a href="https://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP" target="_blank">', '</a>'));
             }
         }
         ////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ class HMWP_Classes_Tools
         self::$options = self::getOptions();
 
         //Load multilanguage
-        add_filter("init", array($this, 'loadMultilanguage'));
+        add_action("init", array($this, 'loadMultilanguage'));
 
         //If it's admin panel
         if(is_admin() || is_network_admin()) {
@@ -148,18 +148,20 @@ class HMWP_Classes_Tools
             'hmwp_plugin_website' => 'https://hidemywpghost.com',
             'hmwp_plugin_account_show' => 1,
             //--
-            'logout' => false,
-            'error' => false,
+            'logout' => 0,
+            'error' => 0,
             'file_mappings' => array(),
-            'test_frontend' => false,
-            'changes' => false,
+            'test_frontend' => 0,
+            'changes' => 0,
             'admin_notice' => array(),
-			'prevent_slow_loading' => 0,
-            //--
+			'prevent_slow_loading' => 1,
+            'hmwp_rewrites_in_wp_rules' => 0,
+            'hmwp_server_type' => 'auto',
+	        //--
+            'hmwp_loading_hook' => array('normal'), //load when the other plugins are initialized
             'hmwp_firstload' => 0, //load the plugin as Must Use Plugin
             'hmwp_priorityload' => 0, //load the plugin on plugin start
             'hmwp_laterload' => 0, //load the plugin on template redirect
-
             //--
             'hmwp_fix_relative' => 0,
             'hmwp_remove_third_hooks' => 0,
@@ -168,14 +170,32 @@ class HMWP_Classes_Tools
             'hmwp_activity_log_roles' => array(),
             'hmwp_email_address' => '',
 
+            //Temporary Login
+            'hmwp_templogin' => 0,
+            'hmwp_templogin_role' => 'administrator',
+            'hmwp_templogin_redirect' => false,
+            'hmwp_templogin_delete_uninstal' => false,
+
+            //2FA Login
+            'hmwp_2falogin' => 0,
+            'hmwp_2falogin_status' => 1,
+            'hmwp_2fa_totp' => 1,
+            'hmwp_2fa_email' => 0,
+            'hmwp_2falogin_max_attempts' => 5,
+            'hmwp_2falogin_max_timeout' => 900,
+            'hmwp_2falogin_message' => '',
+            'hmwp_2falogin_fail_message' => '',
+
             //-- Brute Force
             'hmwp_bruteforce' => 0,
             'hmwp_bruteforce_register' => 0,
+            'hmwp_bruteforce_lostpassword' => 0,
             'hmwp_brute_message' => esc_html__('Your IP has been flagged for potential security violations. Please try again in a little while...', 'hide-my-wp'),
             'whitelist_ip' => array(),
             'banlist_ip' => array(),
             'hmwp_hide_classes' => json_encode(array()),
             'trusted_ip_header' => '',
+            'whitelist_paths' => 0,
 
             //Math reCaptcha
             'brute_use_math' => 1,
@@ -200,6 +220,7 @@ class HMWP_Classes_Tools
             'hmwp_change_in_cache_directory' => '',
             'hmwp_hide_loggedusers' => 1,
             'hmwp_hide_version' => 1,
+            'hmwp_hide_version_random' => 0,
             'hmwp_hide_generator' => 1,
             'hmwp_hide_prefetch' => 1,
             'hmwp_hide_comments' => 1,
@@ -208,6 +229,7 @@ class HMWP_Classes_Tools
             'hmwp_hide_feed' => 0,
             'hmwp_hide_in_feed' => 0,
             'hmwp_hide_in_sitemap' => 0,
+            'hmwp_hide_author_in_sitemap' => 1,
             'hmwp_robots' => 0,
 
             'hmwp_disable_emojicons' => 0,
@@ -221,6 +243,7 @@ class HMWP_Classes_Tools
             'hmwp_disable_click_message' => "Right click is disabled!",
 
             'hmwp_disable_inspect' => 0,
+            'hmwp_disable_inspect_blank' => 0,
             'hmwp_disable_inspect_loggedusers' => 0,
             'hmwp_disable_inspect_roles' => array('subscriber'),
             'hmwp_disable_inspect_message' => "Inspect Element is disabled!",
@@ -292,6 +315,7 @@ class HMWP_Classes_Tools
             'hmwp_themes' => array(),
             'hmwp_upload_url' => 'uploads',
             'hmwp_admin-ajax_url' => 'admin-ajax.php',
+            'hmwp_wp-signup_url' => 'wp-signup.php',
             'hmwp_hideajax_paths' => 0,
             'hmwp_hideajax_admin' => 0,
             'hmwp_tags_url' => 'tag',
@@ -307,6 +331,7 @@ class HMWP_Classes_Tools
             'hmwp_wp-json' => 'wp-json',
             'hmwp_hide_rest_api' => 0,
             'hmwp_disable_rest_api' => 0,
+            'hmwp_disable_rest_api_param' => 0,
             'hmwp_disable_xmlrpc' => 0,
             'hmwp_hide_rsd' => 0,
             'hmwp_hide_admin' => 0,
@@ -326,10 +351,9 @@ class HMWP_Classes_Tools
             'hmwp_security_header' => 0,
             'hmwp_hide_unsafe_headers' => 0,
             'hmwp_security_headers' => array(
-                "Strict-Transport-Security" => "max-age=63072000",
+                "Strict-Transport-Security" => "max-age=15768000;includeSubdomains",
                 "Content-Security-Policy" => "object-src 'none'",
                 "X-XSS-Protection" => "1; mode=block",
-                "X-Content-Type-Options" => "nosniff",
             ),
             //--
             'hmwp_detectors_block' => 0,
@@ -378,15 +402,16 @@ class HMWP_Classes_Tools
             'hmwp_hide_img_classes' => 1,
             'hmwp_hide_rest_api' => 1,
             'hmwp_disable_rest_api' => 0,
-            'hmwp_disable_xmlrpc' => 0,
+            'hmwp_disable_rest_api_param' =>1,
+            'hmwp_disable_xmlrpc' => 1,
             'hmwp_hide_rsd' => 1,
             //
             'hmwp_sqlinjection' => 0,
             'hmwp_security_header' => 1,
             'hmwp_hide_unsafe_headers' => 1,
+            'hmwp_detectors_block' => 0,
 
             //PRO
-            'hmwp_detectors_block' => 0,
             'hmwp_hide_styleids' => 0,
             'hmwp_hide_authors' => 0,
             'hmwp_disable_browsing' => 0,
@@ -434,6 +459,7 @@ class HMWP_Classes_Tools
         $options['hmwp_tag_base'] = $tag_base;
 
 	    if(HMW_PRIORITY) $options['hmwp_priorityload'] = 1;
+	    if(HMW_RULES_IN_WP_RULES) $options['hmwp_rewrites_in_wp_rules'] = 1;
 
 	    return $options;
     }
@@ -483,10 +509,31 @@ class HMWP_Classes_Tools
                 unset(self::$options['hmwp_shutdownload']);
             }
 
+            //update the login on Cloud when plugin update
+            self::sendLoginPathsApi();
+
             self::$options['hmwp_ver'] = HMWP_VERSION_ID;
             self::saveOptions();
         }
     }
+
+	/**
+	 * Get the default value
+	 *
+	 * @since 5.0.19
+	 *
+	 * @param $key
+	 * @return false|mixed
+	 */
+	public static function getDefault( $key )
+	{
+		if (isset(self::$default[$key]) ) {
+			return self::$default[$key];
+		}
+
+		return false;
+
+	}
 
     /**
      * Get the option from database
@@ -568,7 +615,7 @@ class HMWP_Classes_Tools
         if (!defined('WP_PLUGIN_DIR') ) {
             load_plugin_textdomain(dirname(HMWP_BASENAME), dirname(HMWP_BASENAME) . '/languages/');
         } else {
-            load_plugin_textdomain(dirname(HMWP_BASENAME), null, dirname(HMWP_BASENAME) . '/languages/');
+            load_plugin_textdomain(dirname(HMWP_BASENAME), false, dirname(HMWP_BASENAME) . '/languages/');
         }
     }
 
@@ -645,6 +692,41 @@ class HMWP_Classes_Tools
 
         return false;
     }
+
+	/**
+	 * Check if it's valid for click disabl, source code and inspect element
+	 *
+	 * @return bool
+	 */
+	public static function doDisableClick()
+	{
+
+		//Check if is valid for moving on
+		if(!apply_filters('hmwp_process_hide_disable', true)) {
+			return false;
+		}
+
+		if (defined('DOING_CRON') && DOING_CRON ) {
+			return false;
+		}
+
+		//If not admin
+		if (!is_admin() && !is_network_admin() ) {
+
+			if(function_exists('is_user_logged_in')
+			   && (HMWP_Classes_Tools::getOption('hmwp_disable_click')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_inspect')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_source')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop'))){
+
+				return true;
+			}
+
+		}
+
+		return false;
+	}
 
     /**
      * Check if the option to hide the URLs is active
@@ -767,7 +849,7 @@ class HMWP_Classes_Tools
         if (is_string($ret) === true ) {
             if ($keep_newlines === false ) {
                 //Validate the param based on its type
-                if (in_array($key, array('hmwp_email_address', 'hmwp_email')) ) { //validate email address
+                if (in_array($key, array('hmwp_email_address', 'hmwp_email', 'whitelist_ip', 'banlist_ip')) ) { //validate email address
                     $ret = preg_replace('/[^A-Za-z0-9-_.#*@\/]/', '', $ret);
                 } elseif (in_array($key, array('hmwp_disable_name')) ) { //validate url parameter
                     $ret = preg_replace('/[^A-Za-z0-9-_]/', '', $ret);
@@ -909,6 +991,13 @@ class HMWP_Classes_Tools
                 'sslverify' => _HMWP_CHECK_SSL_,
                 'method' => 'GET',
                 'timeout' => 30,
+                'headers' => array(
+                    'TOKEN' => HMWP_Classes_Tools::getOption('hmwp_token'),
+                    'API-TOKEN' => HMWP_Classes_Tools::getOption('api_token'),
+                    'USER-URL' =>  home_url(),
+                    'LANG' => get_bloginfo('language'),
+                    'VER' => HMWP_VERSION
+                )
             ),
             $options
         );
@@ -918,7 +1007,6 @@ class HMWP_Classes_Tools
             $options['body'] = $params;
             unset($options['method']);
             $response = wp_remote_post($url, $options);
-
         } else {
 
             unset($options['method']);
@@ -947,13 +1035,11 @@ class HMWP_Classes_Tools
         $options = array_merge(
             array(
                 'sslverify' => false,
-                'method' => 'GET',
                 'timeout' => 10,
             ),
             $options
         );
 
-        unset($options['method']);
         $response = wp_remote_get($url, $options);
 
         if (is_wp_error($response) ) {
@@ -1020,6 +1106,11 @@ class HMWP_Classes_Tools
     {
         global $is_apache;
 
+		//If custom defined
+        if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+            return in_array(HMWP_Classes_Tools::getOption('hmwp_server_type'), array('apache', 'litespeed', 'siteground'));
+        }
+
         //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'apache' ) {
             return true;
@@ -1058,6 +1149,11 @@ class HMWP_Classes_Tools
     {
         $litespeed = false;
 
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+		    return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'litespeed');
+	    }
+
         //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'litespeed' ) {
             return true;
@@ -1095,6 +1191,11 @@ class HMWP_Classes_Tools
      */
     public static function isAWS()
     {
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+		    return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'bitnami');
+	    }
+
 	    if(isset($_SERVER["DOCUMENT_ROOT"]) && strpos($_SERVER["DOCUMENT_ROOT"], "/bitnami/")){
 		    return true;
 	    }
@@ -1139,6 +1240,11 @@ class HMWP_Classes_Tools
     {
         global $is_nginx;
 
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+            return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'nginx');
+        }
+
         //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'nginx' ) {
             return true;
@@ -1156,6 +1262,10 @@ class HMWP_Classes_Tools
      */
     public static function isWpengine()
     {
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+		    return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'wpengine');
+	    }
 
         //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'wpengine' ) {
@@ -1173,6 +1283,11 @@ class HMWP_Classes_Tools
      */
     public static function isFlywheel()
     {
+
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+		    return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'flywheel');
+	    }
 
         //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'flywheel' ) {
@@ -1194,6 +1309,11 @@ class HMWP_Classes_Tools
     public static function isInmotion()
     {
 
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+		    return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'inmotion');
+	    }
+
         //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'inmotion' ) {
             return true;
@@ -1209,6 +1329,11 @@ class HMWP_Classes_Tools
      */
     public static function isGodaddy()
     {
+
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+		    return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'godaddy');
+	    }
 
         //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'godaddy' ) {
@@ -1227,7 +1352,12 @@ class HMWP_Classes_Tools
     {
         global $is_IIS, $is_iis7;
 
-        //If custom defined
+	    //If custom defined
+	    if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+		    return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'iis');
+	    }
+
+	    //If custom defined
         if (defined('HMWP_SERVER_TYPE') && strtolower(HMWP_SERVER_TYPE) == 'iis' ) {
             return true;
         }
@@ -1260,6 +1390,22 @@ class HMWP_Classes_Tools
 
         return false;
     }
+
+	/**
+	 * Returns true if server is Godaddy
+	 *
+	 * @return boolean
+	 */
+	public static function isCloudPanel()
+	{
+
+		//If custom defined
+		if (HMWP_Classes_Tools::getOption('hmwp_server_type') <> 'auto' ) {
+			return (HMWP_Classes_Tools::getOption('hmwp_server_type') == 'cloudpanel');
+		}
+
+		return false;
+	}
 
     /**
      * Is a cache plugin installed in WordPress?
@@ -1319,25 +1465,27 @@ class HMWP_Classes_Tools
         return in_array($plugin, self::$active_plugins, true);
     }
 
-    /**
-     * Check whether the theme is active.
-     *
-     * @param string $theme Theme folder/main file.
-     *
-     * @return boolean
-     */
-    public static function isThemeActive( $theme )
-    {
-        if (function_exists('wp_get_theme') ) {
-            $themes = wp_get_theme();
+	/**
+	 * Check whether the theme is active.
+	 *
+	 * @param string $name Theme folder/main file.
+	 *
+	 * @return boolean
+	 */
+	public static function isThemeActive( $name )
+	{
+		$theme = get_option( 'template' );
 
-            if (isset($themes->name) && (strtolower($themes->name) == strtolower($theme) || strtolower($themes->name) == strtolower($theme) . ' child' || strtolower($themes->name) == strtolower($theme) . ' child theme') ) {
-                return true;
-            }
-        }
+		if ($theme) {
+			if (strtolower($theme) == strtolower($name) ||
+			    strtolower($theme) == strtolower($name) . ' child' ||
+			    strtolower($theme) == strtolower($name) . ' child theme') {
+				return true;
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 
     /**
      * Get all the plugin names
@@ -1425,8 +1573,18 @@ class HMWP_Classes_Tools
         $url = wp_make_link_relative($url);
 
         if ($url <> '' ) {
-            $url = str_replace(wp_make_link_relative(get_bloginfo('url')), '', $url);
 
+            //Get the relative domain
+            $domain = site_url();
+            if(self::isMultisiteWithPath()){
+                $domain = network_site_url();
+            }
+            $domain = wp_make_link_relative($domain);
+
+            //exclude the root domain
+            $url = str_replace($domain, '', $url);
+
+            //remove the domain path if exists
             if (self::isMultisiteWithPath() && defined('PATH_CURRENT_SITE') && PATH_CURRENT_SITE <> '/' ) {
                 $url = str_replace(rtrim(PATH_CURRENT_SITE, '/'), '', $url);
             }
@@ -1434,6 +1592,28 @@ class HMWP_Classes_Tools
 
         return trailingslashit($url);
     }
+
+	/**
+	 * Check if wp-content is changed and set in a different location
+	 *
+	 * @ver 7.0.12
+	 *
+	 * @return bool
+	 */
+	public static function isDifferentWPContentPath(){
+		$homepath = '';
+		if(parse_url(site_url(), PHP_URL_PATH)){
+			$homepath = ltrim(parse_url(site_url(), PHP_URL_PATH), '/');
+		}
+
+		if($homepath <> '/') {
+			$contenturl = ltrim(parse_url(content_url(), PHP_URL_PATH), '/');
+
+			return (strpos($contenturl, $homepath . '/') === false);
+		}
+
+		return false;
+	}
 
     /**
      * Empty the cache from other cache plugins when save the settings
@@ -1448,6 +1628,10 @@ class HMWP_Classes_Tools
 
             //For debugging
             do_action('hmwp_debug_cache', '');
+
+	        if (class_exists('\FlyingPress\Purge') && method_exists('\FlyingPress\Purge', 'purge_everything')){
+		        \FlyingPress\Purge::purge_everything();
+	        }
 
             if (class_exists('\JchOptimize\Platform\Cache') && method_exists('\JchOptimize\Platform\Cache', 'deleteCache') ) {
                 \JchOptimize\Platform\Cache::deleteCache();
@@ -1547,7 +1731,6 @@ class HMWP_Classes_Tools
             update_option('woocommerce_queue_flush_rewrite_rules', 'yes');
         }
 
-        flush_rewrite_rules();
     }
 
     /**
@@ -1594,6 +1777,9 @@ class HMWP_Classes_Tools
         //clear the locked ips
         HMWP_Classes_ObjController::getClass('HMWP_Controllers_Brute')->clearBlockedIPs();
 
+	    //Build the redirect table
+	    HMWP_Classes_ObjController::getClass('HMWP_Models_Rewrite')->flushChanges();
+
         //Delete the compatibility with other plugins
         HMWP_Classes_ObjController::getClass('HMWP_Models_Compatibility')->uninstall();
     }
@@ -1629,31 +1815,6 @@ class HMWP_Classes_Tools
         }
 
         return $wp_rules;
-    }
-
-    /**
-     * Check the plugins upgrade
-     * Add the rewrite hook on plugins update or core update to make sure the rules are added correctly
-     *
-     * @param stdClass $upgrader_object
-     * @param array $options
-     */
-    public function checkPluginsUpdate($upgrader_object, $options)
-    {
-        if($options['action'] == 'update') {
-            if($options['type'] == 'plugin' || $options['type'] == 'core') {
-
-                try{
-
-                    //Make sure the rules are added in the config file wne the core or a plugin is upgraded
-                    $this->checkRewriteUpdate(array());
-
-                }catch (Exception $e){
-
-                }
-
-            }
-        }
     }
 
     /**
@@ -1703,6 +1864,28 @@ class HMWP_Classes_Tools
         }
     }
 
+    /**
+     * Send the login URL to Cloud for this URL
+     * @return void
+     */
+    public static function sendLoginPathsApi(){
+
+        if(HMWP_Classes_Tools::getOption('api_token')){
+
+            $domain = (self::isMultisites() && defined('BLOG_ID_CURRENT_SITE')) ? get_home_url(BLOG_ID_CURRENT_SITE) : home_url();
+            $options = array( 'timeout' => 10, 'headers' => array( 'USER-URL' => $domain ) );
+
+            $login = array(
+                'path' => HMWP_Classes_Tools::getOption('hmwp_login_url'),
+                'parameter' => HMWP_Classes_Tools::getOption('hmwp_disable_name'),
+                'value' => HMWP_Classes_Tools::getOption('hmwp_disable'),
+            );
+
+            self::hmwp_remote_post(_HMWP_API_SITE_ . '/api/settings',
+                array('login' => wp_json_encode($login), 'url' => $domain), $options);
+        }
+    }
+
 	/**
 	 * Call Account API Server
 	 *
@@ -1740,27 +1923,25 @@ class HMWP_Classes_Tools
 		    return $check;
 	    }
 
-	    if ( $response && json_decode( $response ) ) {
-			//print_r($response);exit();
-		    $check = json_decode( $response, true );
+        if ($response && $response = json_decode($response, true)) {
 
-		    HMWP_Classes_Tools::saveOptions( 'hmwp_token', ( isset( $check['token'] ) ? $check['token'] : 0 ) );
-		    HMWP_Classes_Tools::saveOptions( 'api_token', ( isset( $check['api_token'] ) ? $check['api_token'] : false ) );
-		    HMWP_Classes_Tools::saveOptions( 'error', isset( $check['error'] ) );
+		    HMWP_Classes_Tools::saveOptions( 'hmwp_token', ( isset( $response['token'] ) ? $response['token'] : 0 ) );
+		    HMWP_Classes_Tools::saveOptions( 'api_token', ( isset( $response['api_token'] ) ? $response['api_token'] : false ) );
+		    HMWP_Classes_Tools::saveOptions( 'error', isset( $response['error'] ) );
 
-		    if ( ! isset( $check['error'] ) ) {
+		    if ( ! isset( $response['error'] ) ) {
 			    if ( $redirect_to <> '' ) {
 				    wp_redirect( $redirect_to );
 				    exit();
 			    }
-		    } elseif ( isset( $check['message'] ) ) {
-			    HMWP_Classes_Error::setError( $check['message'] );
+		    } elseif ( isset( $response['message'] ) ) {
+                HMWP_Classes_Error::setNotification($response['message'], 'notice', false);
 		    }
 	    } else {
-		    HMWP_Classes_Error::setError( sprintf( __( 'CONNECTION ERROR! Make sure your website can access: %s', 'hide-my-wp' ), '<a href="' . _HMWP_ACCOUNT_SITE_ . '" target="_blank">' . _HMWP_ACCOUNT_SITE_ . '</a>' ) . " <br /> " );
+		    HMWP_Classes_Error::setNotification( sprintf( __( 'CONNECTION ERROR! Make sure your website can access: %s', 'hide-my-wp' ), '<a href="' . _HMWP_ACCOUNT_SITE_ . '" target="_blank">' . _HMWP_ACCOUNT_SITE_ . '</a>' ) , 'notice', false );
 	    }
 
-	    return $check;
+	    return $response;
 
     }
 
@@ -1923,6 +2104,30 @@ class HMWP_Classes_Tools
         return false;
     }
 
+    /**
+     * Search part of string in array
+     *
+     * @param string $needle
+     * @param array $haystack
+     *
+     * @return bool
+     */
+    public static function searchInString( $string, $haystack )
+    {
+        foreach ( $haystack as $value ) {
+            if($string && $value && $string <> '' && $value <> '') {
+                if (function_exists('mb_stripos')) {
+                    if (mb_stripos($string, $value) !== false) {
+                        return true;
+                    }
+                } elseif (stripos($string, $value) !== false) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     /**
      * Customize the redirect for the logout process
@@ -2012,73 +2217,158 @@ class HMWP_Classes_Tools
         return HMWP_Classes_ObjController::initFilesystem();
     }
 
-	/**
-	 * Check if there are whitelisted IPs for accessing the hidden paths
-	 * @return bool
-	 */
-	public static function isWhitelistedIP($ip){
-		$wl_items = array();
+    public static function isWhitelistedIP($ip){
+        $wl_items = array();
 
-		//jetpack whitelist
-		$wl_jetpack = array(
-			'127.0.0.1',
-			'122.248.245.244/32',
-			'54.217.201.243/32',
-			'54.232.116.4/32',
-			'185.64.140.0/22',
-			'76.74.255.0/22',
-			'192.0.64.0/18',
-			'192.0.65.0/22',
-			'192.0.80.0/22',
-			'192.0.96.0/22',
-			'192.0.112.0/20',
-			'192.0.123.0/22',
-			'195.234.108.0/22',
-		);
+        if(!filter_var($ip, FILTER_VALIDATE_IP)){
+            return true;
+        }
 
-		if (HMWP_Classes_Tools::getOption('whitelist_ip')) {
-			$wl_items = json_decode(HMWP_Classes_Tools::getOption('whitelist_ip'), true);
-		}
+        //jetpack whitelist
+        $wl_jetpack = array(
+            '122.248.245.244/32',
+            '54.217.201.243/32',
+            '54.232.116.4/32',
+            '185.64.140.0/22',
+            '76.74.255.0/22',
+            '192.0.64.0/18',
+            '192.0.65.0/22',
+            '192.0.80.0/22',
+            '192.0.96.0/22',
+            '192.0.112.0/20',
+            '192.0.123.0/22',
+            '195.234.108.0/22',
+        );
 
-		$wl_items = array_merge($wl_jetpack, $wl_items);
+        if (filter_var(home_url(), FILTER_VALIDATE_URL) !== FALSE && strpos(home_url(), '.') !== false) {
+            $wl_jetpack[] = '127.0.0.1';
+        }
 
-		foreach ($wl_items as $item) {
-			$item = trim($item);
+        if (HMWP_Classes_Tools::getOption('whitelist_ip')) {
+            $wl_items = (array)json_decode(HMWP_Classes_Tools::getOption('whitelist_ip'), true);
+        }
 
-			if ($ip == $item) {
-				return true;
-			}
+        //merge all the whitelisted ips and also add the hook for users
+        $wl_items = apply_filters('hmwp_whitelisted_ips', array_merge($wl_jetpack, $wl_items));
 
-			if (strpos($item, '*') === false && strpos($item, '/') === false) { //no match, no wildcard
-				continue;
-			}
+        try {
+            foreach ($wl_items as $item) {
+                $item = trim($item);
 
-			if(strpos($ip,'.') !== false) {
+                if (filter_var($item, FILTER_VALIDATE_IP) && $ip == $item) {
+                    return true;
+                }
 
-				if(strpos($item,'/') !== false) {
-					list( $range, $bits ) = explode( '/', $item, 2 );
-					$subnet = ip2long( $range );
-					$iplong = ip2long( $ip );
-					$mask = -1 << (32 - $bits);
-					$subnet &= $mask;
+                if (strpos($item, '*') === false && strpos($item, '/') === false) { //no match, no wildcard
+                    continue;
+                }
 
-					if ( ($iplong & $mask) == $subnet ){
-						return true;
-					}
+                if(strpos($ip,'.') !== false) {
 
-				}
+                    if(strpos($item,'/') !== false) {
+                        list( $range, $bits ) = explode( '/', $item, 2 );
 
-				$iplong = ip2long($ip);
-				$ip_low = ip2long(str_replace('*', '0', $item));
-				$ip_high = ip2long(str_replace('*', '255', $item));
+                        if (0 == (int)$bits) {
+                            continue;
+                        }
 
-				if ($iplong >= $ip_low && $iplong <= $ip_high) {//IP is within wildcard range
-					return true;
-				}
-			}
+                        if ((int)$bits < 0 || (int)$bits > 32) {
+                            continue;
+                        }
 
-		}
+                        $subnet = ip2long( $range );
+                        $iplong = ip2long( $ip );
+                        $mask = -1 << (32 - $bits);
+                        $subnet &= $mask;
 
-		return false;
-	}
+                        if ( ($iplong & $mask) == $subnet ){
+                            return true;
+                        }
+                    }
+
+                    $iplong = ip2long($ip);
+                    $ip_low = ip2long(str_replace('*', '0', $item));
+                    $ip_high = ip2long(str_replace('*', '255', $item));
+
+                    if ($iplong >= $ip_low && $iplong <= $ip_high) {//IP is within wildcard range
+                        return true;
+                    }
+                }
+
+            }
+        } catch(Exception $e) {
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if there are banned IPs for accessing the hidden paths
+     * @return bool
+     */
+    public static function isBlacklistedIP($ip){
+        $bl_items = array();
+
+        $bl_blacklisted = array(
+            '35.214.130.0/22',
+            '54.86.50.0/22',
+        );
+
+        if (HMWP_Classes_Tools::getOption('banlist_ip')) {
+            $bl_items = (array)json_decode(HMWP_Classes_Tools::getOption('banlist_ip'), true);
+        }
+
+        //merge all the whitelisted ips and also add the hook for users
+        $bl_items = apply_filters('hmwp_banlist_ips', array_merge($bl_blacklisted, $bl_items));
+
+        try {
+            foreach ($bl_items as $item) {
+                $item = trim($item);
+
+                if (filter_var($item, FILTER_VALIDATE_IP) && $ip == $item) {
+                    return true;
+                }
+
+                if (strpos($item, '*') === false && strpos($item, '/') === false) { //no match, no wildcard
+                    continue;
+                }
+
+                if(strpos($ip,'.') !== false) {
+
+                    if(strpos($item,'/') !== false) {
+                        list( $range, $bits ) = explode( '/', $item, 2 );
+
+                        if (0 == (int)$bits) {
+                            continue;
+                        }
+
+                        if ((int)$bits < 0 || (int)$bits > 32) {
+                            continue;
+                        }
+
+                        $subnet = ip2long( $range );
+                        $iplong = ip2long( $ip );
+                        $mask = -1 << (32 - $bits);
+                        $subnet &= $mask;
+
+                        if ( ($iplong & $mask) == $subnet ){
+                            return true;
+                        }
+                    }
+
+                    $iplong = ip2long($ip);
+                    $ip_low = ip2long(str_replace('*', '0', $item));
+                    $ip_high = ip2long(str_replace('*', '255', $item));
+
+                    if ($iplong >= $ip_low && $iplong <= $ip_high) {//IP is within wildcard range
+                        return true;
+                    }
+                }
+
+            }
+        } catch(Exception $e) {
+        }
+
+        return false;
+    }
 }

@@ -1,12 +1,12 @@
 <?php
 /*
-  Copyright (c) 2016 - 2022, WPPlugins.
+  Copyright (c) 2016 - 2023, WPPlugins.
   The copyrights to the software code in this file are licensed under the (revised) BSD open source license.
 
   Plugin Name: Hide My WP Ghost Lite
   Plugin URI: https://wordpress.org/plugins/hide-my-wp/
   Description: Hide WP paths, wp-admin, wp-login, wp-content, plugins, themes, authors, XML-RPC, API, etc. Add 7G Firewall Security, Brute Force protection & more.
-  Version: 5.0.17
+  Version: 5.0.27
   Author: WPPlugins - WordPress Security Plugins
   Author URI: https://hidemywp.com
   License: GPLv2 or later
@@ -14,17 +14,17 @@
   Text Domain: hide-my-wp
   Domain Path: /languages
   Network: true
-  Requires at least: 4.3
-  Requires PHP: 5.6
+  Requires at least: 4.6
+  Requires PHP: 7.0
  */
 
 if ( defined( 'ABSPATH' ) && !defined( 'HMW_VERSION' ) ) {
 
     //Set current plugin version
-    define( 'HMWP_VERSION', '5.0.17' );
+    define( 'HMWP_VERSION', '5.0.27' );
 
     //Set the last stable version of the plugin
-    define( 'HMWP_STABLE_VERSION', '5.0.16' );
+    define( 'HMWP_STABLE_VERSION', '5.0.26' );
 
     //Set the plugin basename
     define( 'HMWP_BASENAME',  plugin_basename(__FILE__) );
@@ -92,7 +92,28 @@ if ( defined( 'ABSPATH' ) && !defined( 'HMW_VERSION' ) ) {
             if ((HMWP_Classes_Tools::getOption('hmwp_mode') <> 'default')) {
 
                 //on core or plugins update
-                add_action('upgrader_process_complete', array(HMWP_Classes_ObjController::getClass('HMWP_Classes_Tools'), 'checkPluginsUpdate'), 10, 2);
+	            add_action('automatic_updates_complete', function($options)
+	            {
+		            if($options['action'] == 'update') {
+			            set_transient( 'hmwp_update', 1 );
+		            }
+	            }, 10, 1);
+
+	            //on plugins are update
+	            add_action('upgrader_process_complete', function($upgrader_object, $options)
+	            {
+		            $our_plugin = plugin_basename( __FILE__ );
+
+		            if($options['action'] == 'update') {
+			            if( $options['type'] == 'plugin' && isset( $options['plugins'] ) ) {
+				            foreach( $options['plugins'] as $plugin ) {
+					            if( $plugin <> $our_plugin ) {
+						            set_transient( 'hmwp_update', 1 );
+					            }
+				            }
+			            }
+		            }
+	            }, 10, 2);
 
                 if (HMWP_Classes_Tools::getOption('hmwp_change_in_cache') || HMWP_Classes_Tools::getOption('hmwp_mapping_file')) {
                     //Run the HMWP crons

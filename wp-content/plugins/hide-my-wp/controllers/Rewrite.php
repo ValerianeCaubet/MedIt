@@ -31,25 +31,10 @@ class HMWP_Controllers_Rewrite extends HMWP_Classes_FrontController
 		    return;
 	    }
 
-        //If safe parameter is set, clear the banned IPs and let the default paths
-        if (HMWP_Classes_Tools::getIsset(HMWP_Classes_Tools::getOption('hmwp_disable_name')) ) {
-            if (HMWP_Classes_Tools::getValue(HMWP_Classes_Tools::getOption('hmwp_disable_name')) == HMWP_Classes_Tools::getOption('hmwp_disable') ) {
-
-                HMWP_Classes_ObjController::getClass('HMWP_Controllers_Brute')->clearBlockedIPs();
-                HMWP_Classes_Tools::saveOptions('banlist_ip', json_encode(array()));
-
-                add_filter('site_url', array($this->model, 'site_url'), PHP_INT_MAX, 2);
-                return;
-            }
-        }
-
-	    //prevent slow websites due to misconfiguration in the config file
-	    if(HMWP_Classes_Tools::getOption( 'prevent_slow_loading' ) && count((array)HMWP_Classes_Tools::getOption( 'file_mappings' )) > 1){
-		    return;
-	    }
-
 	    //Init the main hooks
-        $this->initHooks();
+	    //start HMWP path process
+	    $this->initHooks();
+
     }
 
     /**
@@ -72,10 +57,46 @@ class HMWP_Controllers_Rewrite extends HMWP_Classes_FrontController
             return;
         }
 
+        //If safe parameter is set, clear the banned IPs and let the default paths
+        if (HMWP_Classes_Tools::getIsset(HMWP_Classes_Tools::getOption('hmwp_disable_name')) ) {
+            if (HMWP_Classes_Tools::getValue(HMWP_Classes_Tools::getOption('hmwp_disable_name')) == HMWP_Classes_Tools::getOption('hmwp_disable') ) {
+
+                HMWP_Classes_ObjController::getClass('HMWP_Controllers_Brute')->clearBlockedIPs();
+                HMWP_Classes_Tools::saveOptions('banlist_ip', json_encode(array()));
+
+                add_filter('site_url', array($this->model, 'site_url'), PHP_INT_MAX, 2);
+                add_filter('hmwp_process_init', '__return_false');
+                return;
+            }
+        }
+
+        //prevent slow websites due to misconfiguration in the config file
+        if(count((array)HMWP_Classes_Tools::getOption( 'file_mappings' )) > 0){
+
+            if(HMWP_Classes_Tools::getOption( 'prevent_slow_loading' )){
+                return;
+            }
+
+            add_filter('hmwp_process_hide_urls', '__return_false');
+        }
+
+        //Check the whitelist IPs for accessing the hide paths
+        HMWP_Classes_ObjController::getClass('HMWP_Models_Compatibility')->checkWhitelistIPs();
+
+	    //load the compatibility class when the plugin loads
+	    //Check boot compatibility for some plugins and functionalities
+	    HMWP_Classes_ObjController::getClass('HMWP_Models_Compatibility')->checkCompatibility();
+
+
         //don't let to rename and hide the current paths if logout is required
         if (HMWP_Classes_Tools::getOption('error') || HMWP_Classes_Tools::getOption('logout') ) {
             return;
         }
+
+	    //check if the custom paths ar set to be processed
+	    if(!apply_filters('hmwp_process_init', true)) {
+		    return;
+	    }
 
         //rename the author if set so
         add_filter('author_rewrite_rules', array($this->model, 'author_url'), PHP_INT_MAX, 1);
@@ -123,12 +144,6 @@ class HMWP_Controllers_Rewrite extends HMWP_Classes_FrontController
         //check and set the cookied for the modified urls
         HMWP_Classes_ObjController::getClass('HMWP_Models_Cookies');
 
-        //load the compatibility class when the plugin loads
-        //Check boot compatibility for some plugins and functionalities
-        HMWP_Classes_ObjController::getClass('HMWP_Models_Compatibility')->checkCompatibility();
-		//Check the whitelist IPs for accessing the hide paths
-	    HMWP_Classes_ObjController::getClass('HMWP_Models_Compatibility')->checkWhitelistIPs();
-
         //Start the buffent sooner if one of these conditions
         //If is ajax call... start the buffer right away
         //is always change the paths
@@ -154,6 +169,9 @@ class HMWP_Controllers_Rewrite extends HMWP_Classes_FrontController
                 add_action('the_content_feed', array($this->model, 'find_replace'));
                 add_action('rss2_head', array($this->model, 'find_replace'));
                 add_action('commentsrss2_head', array($this->model, 'find_replace'));
+                add_action('the_permalink_rss', array($this->model, 'find_replace_url'));
+                add_action('comments_link_feed', array($this->model, 'find_replace_url'));
+                add_action('get_site_icon_url', array($this->model, 'find_replace_url'));
             }
 
             //Check the buffer on shutdown
@@ -216,6 +234,11 @@ class HMWP_Controllers_Rewrite extends HMWP_Classes_FrontController
                 $this->model->hideRestApi();
             }
 
+            //Hide the param rest route
+            if (HMWP_Classes_Tools::getOption('hmwp_disable_rest_api_param') ) {
+                $this->model->hideRestRouteParam();
+            }
+
             //Hide Really Simple Discovery
             if (HMWP_Classes_Tools::getOption('hmwp_hide_rsd') ) {
                 $this->model->disableRsd();
@@ -271,90 +294,85 @@ class HMWP_Controllers_Rewrite extends HMWP_Classes_FrontController
                 $wpdb->hide_errors();
             }
 
-            //Check if Disable keys and mouse action is on
-            if (function_exists('is_user_logged_in') 
-                && (HMWP_Classes_Tools::getOption('hmwp_disable_click') 
-                || HMWP_Classes_Tools::getOption('hmwp_disable_inspect') 
-                || HMWP_Classes_Tools::getOption('hmwp_disable_source') 
-                || HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste') 
-                || HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop'))
-            ) {
 
-                //only disable the click and keys wfor visitors
-                if (!is_user_logged_in() ) {
-                    HMWP_Classes_ObjController::getClass('HMWP_Models_Clicks');
-                }else {
-
-                    HMWP_Classes_Tools::setCurrentUserRole();
-                    $role = HMWP_Classes_Tools::getUserRole();
-
-                    if(HMWP_Classes_Tools::getOption('hmwp_disable_click_loggedusers')) {
-                        $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_click_roles');
-
-                        if (!in_array($role, $selected_roles)) {
-                            add_filter('hmwp_option_hmwp_disable_click', '__return_false');
-                        }
-                    }else{
-                        add_filter('hmwp_option_hmwp_disable_click', '__return_false');
-                    }
-
-                    if(HMWP_Classes_Tools::getOption('hmwp_disable_inspect_loggedusers')) {
-                        $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_inspect_roles');
-
-                        if (!in_array($role, $selected_roles)) {
-                            add_filter('hmwp_option_hmwp_disable_inspect', '__return_false');
-                        }
-                    }else{
-                        add_filter('hmwp_option_hmwp_disable_inspect', '__return_false');
-                    }
-
-                    if(HMWP_Classes_Tools::getOption('hmwp_disable_source_loggedusers')) {
-                        $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_source_roles');
-
-                        if (!in_array($role, $selected_roles)) {
-                            add_filter('hmwp_option_hmwp_disable_source', '__return_false');
-                        }
-                    }else{
-                        add_filter('hmwp_option_hmwp_disable_source', '__return_false');
-                    }
-
-                    if(HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste_loggedusers')) {
-                        $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste_roles');
-
-                        if (!in_array($role, $selected_roles)) {
-                            add_filter('hmwp_option_hmwp_disable_copy_paste', '__return_false');
-                        }
-                    }else{
-                        add_filter('hmwp_option_hmwp_disable_copy_paste', '__return_false');
-                    }
-
-                    if(HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop_loggedusers')) {
-                        $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop_roles');
-
-                        if (!in_array($role, $selected_roles)) {
-                            add_filter('hmwp_option_hmwp_disable_drag_drop', '__return_false');
-                        }
-                    }else{
-                        add_filter('hmwp_option_hmwp_disable_drag_drop', '__return_false');
-                    }
-
-                    //check again if the options are active after the filrter are applied
-                    if(HMWP_Classes_Tools::getOption('hmwp_disable_click') 
-                        || HMWP_Classes_Tools::getOption('hmwp_disable_inspect') 
-                        || HMWP_Classes_Tools::getOption('hmwp_disable_source') 
-                        || HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste') 
-                        || HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop')
-                    ) {
-
-                        HMWP_Classes_ObjController::getClass('HMWP_Models_Clicks');
-
-                    }
-
-                }
-
-            }
         }
 
+	    //Check if Disable keys and mouse action is on
+	    if (HMWP_Classes_Tools::doDisableClick()) {
+
+		    //only disable the click and keys wfor visitors
+		    if (!is_user_logged_in() ) {
+			    HMWP_Classes_ObjController::getClass('HMWP_Models_Clicks');
+		    }else {
+
+			    HMWP_Classes_Tools::setCurrentUserRole();
+			    $role = HMWP_Classes_Tools::getUserRole();
+
+			    if(HMWP_Classes_Tools::getOption('hmwp_disable_click_loggedusers')) {
+				    $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_click_roles');
+
+				    if (!in_array($role, $selected_roles)) {
+					    add_filter('hmwp_option_hmwp_disable_click', '__return_false');
+				    }
+			    }else{
+				    add_filter('hmwp_option_hmwp_disable_click', '__return_false');
+			    }
+
+			    if(HMWP_Classes_Tools::getOption('hmwp_disable_inspect_loggedusers')) {
+				    $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_inspect_roles');
+
+				    if (!in_array($role, $selected_roles)) {
+					    add_filter('hmwp_option_hmwp_disable_inspect', '__return_false');
+				    }
+			    }else{
+				    add_filter('hmwp_option_hmwp_disable_inspect', '__return_false');
+			    }
+
+			    if(HMWP_Classes_Tools::getOption('hmwp_disable_source_loggedusers')) {
+				    $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_source_roles');
+
+				    if (!in_array($role, $selected_roles)) {
+					    add_filter('hmwp_option_hmwp_disable_source', '__return_false');
+				    }
+			    }else{
+				    add_filter('hmwp_option_hmwp_disable_source', '__return_false');
+			    }
+
+			    if(HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste_loggedusers')) {
+				    $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste_roles');
+
+				    if (!in_array($role, $selected_roles)) {
+					    add_filter('hmwp_option_hmwp_disable_copy_paste', '__return_false');
+				    }
+			    }else{
+				    add_filter('hmwp_option_hmwp_disable_copy_paste', '__return_false');
+			    }
+
+			    if(HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop_loggedusers')) {
+				    $selected_roles = (array)HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop_roles');
+
+				    if (!in_array($role, $selected_roles)) {
+					    add_filter('hmwp_option_hmwp_disable_drag_drop', '__return_false');
+				    }
+			    }else{
+				    add_filter('hmwp_option_hmwp_disable_drag_drop', '__return_false');
+			    }
+
+			    //check again if the options are active after the filrter are applied
+			    if(HMWP_Classes_Tools::getOption('hmwp_disable_click')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_inspect')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_source')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_copy_paste')
+			       || HMWP_Classes_Tools::getOption('hmwp_disable_drag_drop')
+			    ) {
+
+				    HMWP_Classes_ObjController::getClass('HMWP_Models_Clicks');
+
+			    }
+
+		    }
+
+	    }
 
     }
 
@@ -367,19 +385,23 @@ class HMWP_Controllers_Rewrite extends HMWP_Classes_FrontController
     public function hookChangePaths()
     {
 
-        if (HMWP_Classes_Tools::getOption('hmwp_mapping_file') ) {
+	    if (HMWP_Classes_Tools::getOption('hmwp_mapping_file') ||
+	        count((array)HMWP_Classes_Tools::getOption( 'file_mappings' )) > 0) {
 
-            //Load MappingFile Check the Mapping Files
-            //Check the mapping file in case of config issues or missing rewrites
-            HMWP_Classes_ObjController::getClass('HMWP_Models_Files')->checkMappingFile();
+		    //Load MappingFile Check the Mapping Files
+		    //Check the mapping file in case of config issues or missing rewrites
+		    HMWP_Classes_ObjController::getClass('HMWP_Models_Files')->maybeShowFile();
 
-        }elseif(HMWP_Classes_Tools::getvalue('hmwp_brokenfiles', true)) {
+	    }
 
-            //in case of broken URL, try to load it
-            //priority 10 is working for broken files
-            add_action('template_redirect', array(HMWP_Classes_ObjController::getClass('HMWP_Models_Files'), 'checkBrokenFile'), 10);
+	    if(!HMWP_Classes_Tools::getValue('hmwp_preview')) {
+		    //if not frontend preview/testing
 
-        }
+		    //in case of broken URL, try to load it
+		    //priority 1 is working for broken files
+		    add_action('template_redirect', array(HMWP_Classes_ObjController::getClass('HMWP_Models_Files'), 'maybeShowNotFound'), 1);
+
+	    }
 
         //Check Compatibilities with other plugins
         HMWP_Classes_ObjController::getClass('HMWP_Models_Compatibility')->checkBuildersCompatibility();

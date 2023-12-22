@@ -326,7 +326,7 @@ class HMWP_Models_Rules
 
                 if (is_writeable($config_file) ) {
                     if (method_exists($wp_filesystem, 'copy') ) {
-                        $wp_filesystem->copy($config_file, $config_file . '_' . substr(md5(date('d')), 0, 5));
+                        $wp_filesystem->copy($config_file, $config_file . '_bk');
                     }
 
                     return true;

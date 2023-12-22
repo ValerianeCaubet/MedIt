@@ -42,6 +42,15 @@ class FullScreenMobileMenu {
 
     delegate(document.body, ".mobile-menu", "click", this.#onMenuButtonClick);
 
+	document
+	.querySelectorAll('#mobile-fullscreen ul > li > a[href^="#"]:not([href="#"]), #mobile-fullscreen ul > li > a[href*="/#"]:not([href="#"])')
+	.forEach((anchorLink) => {
+		anchorLink.addEventListener("click", this.#handleAnchorLinks);
+	});
+
+
+
+
     document
       .querySelectorAll(
         '#mobile-fullscreen nav ul > li.menu-item-has-children > a > span.dropdown-toggle, #mobile-fullscreen nav ul > li.menu-item-has-children > a[href="#"]'
@@ -61,6 +70,26 @@ class FullScreenMobileMenu {
 
     document.addEventListener("keydown", this.#onDocumentKeydown);
   };
+
+
+  #handleAnchorLinks = (event) => {
+    const href = event.currentTarget.getAttribute('href');
+    const anchor = href.substring(href.lastIndexOf('#')); // Extract the #anchor part
+    const targetElement = document.querySelector(anchor);
+
+    if (targetElement) {
+        event.stopPropagation();
+        this.#closeMenu();
+        setTimeout(() => {
+            window.scrollTo({
+                top: targetElement.offsetTop,
+                behavior: 'smooth'
+            });
+        }, 50);
+    }
+};
+
+
 
   #onMenuButtonClick = (event) => {
     event.preventDefault();
@@ -82,15 +111,16 @@ class FullScreenMobileMenu {
   };
 
   #onCloseIconClick = (event) => {
-    if (event.currentTarget.getAttribute("href").substring(0, 1) === "#") {
+    if (event.currentTarget.classList.contains('close')) {
       event.preventDefault();
+      this.#closeMenu();
     }
-
-    this.#closeMenu();
-  };
+ }
 
   #closeMenu = () => {
+	// console.log("Inside closeMenu");
     if (visible(this.#elements.menu)) {
+		// console.log("Menu is visible");
       this.#elements.toggleMenuBtn.classList.remove("exit");
       this.#elements.menu.classList.remove("active");
 
@@ -112,7 +142,7 @@ class FullScreenMobileMenu {
         });
 
       this.#elements.hamburgerBtn?.classList.remove("is-active");
-    }
+	}
   };
 
   #onWindowResize = (event) => {
