@@ -97,7 +97,8 @@ $lien=get_field('lien_google_maps', 161);
 <script>
 $(document).ready(function(){
     $('.popup-close').click(function(){
-        $(this).closest('.popup-salon').hide(); // MODIFICATION DU CODE pour close popup
+        $(this).closest('.popup-salon').hide(); // Masquer la popup
+        $('.popup-overlay').hide(); // Masquer l'overlay
     });
 });
 </script>

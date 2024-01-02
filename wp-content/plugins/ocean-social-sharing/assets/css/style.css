@@ -14,11 +14,8 @@
 }
 .entry-share ul li a {
   display: -ms-inline-flex;
-  display: -ms-inline-flexbox;
   display: inline-flex;
-  -ms-flex-align: center;
   align-items: center;
-  -ms-flex-pack: center;
   justify-content: center;
   position: relative;
   width: 40px;
@@ -214,16 +211,12 @@
   margin: 6px 0;
 }
 .entry-share.has-name ul {
-  display: -ms-flexbox;
   display: flex;
-  -ms-flex-wrap: wrap;
   flex-wrap: wrap;
-  -ms-flex-pack: space-between;
   justify-content: space-between;
 }
 .entry-share.has-name ul li {
   margin: 6px;
-  -ms-flex: 1;
   flex: 1;
 }
 .entry-share.has-name ul li a {
@@ -237,11 +230,8 @@
   bottom: 0;
   left: 0;
   display: -ms-inline-flex;
-  display: -ms-inline-flexbox;
   display: inline-flex;
-  -ms-flex-align: center;
   align-items: center;
-  -ms-flex-pack: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.08);
   padding: 0 12px;
@@ -331,4 +321,4 @@
     float: none;
     display: inline-block;
   }
-}
+}/*# sourceMappingURL=style.css.map */

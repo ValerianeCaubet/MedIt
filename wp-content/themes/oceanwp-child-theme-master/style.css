@@ -16,6 +16,7 @@ Version: 1.0
     background-color:white;
     padding:6px 16px;
     border-radius:6px;
+    margin-top: 20px; /* Ajout margin pour centrer le bouton de contact */
 }
 .popup-overlay{
     position:fixed;
